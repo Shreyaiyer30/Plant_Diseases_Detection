@@ -1,0 +1,22 @@
+This folder is ready for the PlantVillage dataset.
+
+HOW TO ADD THE DATASET:
+========================
+1. Go to: https://www.kaggle.com/datasets/vipoooool/new-plant-diseases-dataset
+2. Download the zip file (about 2 GB)
+3. Extract the contents
+4. Find the folder that CONTAINS class sub-folders like:
+       Tomato___Early_blight/
+       Potato___Late_Blight/
+       Apple___healthy/
+       ... (38 folders total)
+5. Paste that folder HERE so the structure looks like:
+       data/PlantVillage/
+           Apple___Apple_scab/
+           Apple___Black_rot/
+           Tomato___Early_blight/
+           Tomato___healthy/
+           ... etc
+
+6. Then run training:
+       python train_model.py --dataset data/PlantVillage --epochs 30 --fine-tune

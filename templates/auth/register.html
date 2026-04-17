@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register — PlantCure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"/>
+</head>
+<body class="auth-body">
+
+<div class="auth-wrap">
+
+  <!-- LEFT PANEL -->
+  <div class="auth-left">
+    <div class="auth-left-inner">
+      <div class="brand-logo">🌿 PlantCure</div>
+      <h1 class="auth-hero-title">Join Thousands of<br/><span>Smart Farmers</span></h1>
+      <p class="auth-hero-sub">Get AI-powered plant disease detection, treatment advice, and crop health analytics — completely free.</p>
+      <ul class="feature-list">
+        <li>✅ Instant disease diagnosis</li>
+        <li>✅ Treatment & prevention advice</li>
+        <li>✅ Diagnosis history tracking</li>
+        <li>✅ Analytics dashboard</li>
+        <li>✅ Camera capture support</li>
+      </ul>
+      <div class="leaf-art" aria-hidden="true">🌱</div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="auth-right">
+    <div class="auth-form-box">
+      <h2 class="form-title">Create your account</h2>
+      <p class="form-sub">Free forever — no credit card required</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat, msg in messages %}
+            <div class="flash flash-{{ cat }} flash-inline">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('register') }}" class="auth-form">
+
+        <div class="field-group">
+          <label class="field-label" for="name">Full Name</label>
+          <input class="field-input" type="text" id="name" name="name"
+                 placeholder="e.g. Ravi Sharma" required minlength="2" autocomplete="name"/>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="email">Email Address</label>
+          <input class="field-input" type="email" id="email" name="email"
+                 placeholder="you@example.com" required autocomplete="email"/>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="role">I am a</label>
+          <select class="field-input field-select" id="role" name="role">
+            <option value="farmer">Farmer / Grower</option>
+            <option value="researcher">Agricultural Researcher</option>
+            <option value="student">Student</option>
+            <option value="officer">Extension Officer</option>
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="password">Password</label>
+          <div class="password-wrap">
+            <input class="field-input" type="password" id="password" name="password"
+                   placeholder="At least 6 characters" required minlength="6" autocomplete="new-password"
+                   oninput="checkStrength(this.value)"/>
+            <button type="button" class="pw-toggle" onclick="togglePw('password', this)">👁</button>
+          </div>
+          <div class="strength-bar" id="strengthBar"><div class="strength-fill" id="strengthFill"></div></div>
+          <div class="strength-label" id="strengthLabel"></div>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="confirm_password">Confirm Password</label>
+          <div class="password-wrap">
+            <input class="field-input" type="password" id="confirm_password" name="confirm_password"
+                   placeholder="Repeat your password" required autocomplete="new-password"
+                   oninput="checkMatch()"/>
+            <button type="button" class="pw-toggle" onclick="togglePw('confirm_password', this)">👁</button>
+          </div>
+          <div class="match-msg" id="matchMsg"></div>
+        </div>
+
+        <button type="submit" class="btn-auth">Create Account →</button>
+      </form>
+
+      <p class="auth-switch">
+        Already have an account?
+        <a href="{{ url_for('login') }}">Sign in</a>
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  if (inp.type === "password") { inp.type = "text";     btn.textContent = "🙈"; }
+  else                         { inp.type = "password"; btn.textContent = "👁"; }
+}
+function checkStrength(v) {
+  const fill = document.getElementById("strengthFill");
+  const lbl  = document.getElementById("strengthLabel");
+  let score = 0;
+  if (v.length >= 6)  score++;
+  if (v.length >= 10) score++;
+  if (/[A-Z]/.test(v)) score++;
+  if (/[0-9]/.test(v)) score++;
+  if (/[^A-Za-z0-9]/.test(v)) score++;
+  const levels = [
+    { pct: "20%", color: "#ef4444", label: "Very Weak" },
+    { pct: "40%", color: "#f97316", label: "Weak" },
+    { pct: "60%", color: "#eab308", label: "Fair" },
+    { pct: "80%", color: "#84cc16", label: "Good" },
+    { pct: "100%",color: "#22c55e", label: "Strong" },
+  ];
+  const l = levels[Math.min(score, 4)];
+  fill.style.width = l.pct;
+  fill.style.background = l.color;
+  lbl.textContent = l.label;
+  lbl.style.color = l.color;
+}
+function checkMatch() {
+  const pw  = document.getElementById("password").value;
+  const cfw = document.getElementById("confirm_password").value;
+  const msg = document.getElementById("matchMsg");
+  if (!cfw) { msg.textContent = ""; return; }
+  if (pw === cfw) { msg.textContent = "✓ Passwords match"; msg.style.color = "#22c55e"; }
+  else            { msg.textContent = "✗ Passwords do not match"; msg.style.color = "#ef4444"; }
+}
+</script>
+</body>
+</html>

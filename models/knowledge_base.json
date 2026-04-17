@@ -1,0 +1,52 @@
+{
+  "Healthy": {
+    "description": "The plant looks healthy. No disease detected.",
+    "treatment": "Maintain regular watering, ensure proper sunlight, and continue balanced fertilization.",
+    "prevention": "Monitor regularly, keep soil well-drained, and avoid overhead watering."
+  },
+  "Tomato - Early Blight": {
+    "description": "Caused by Alternaria solani. Dark concentric rings on older leaves.",
+    "treatment": "Apply Mancozeb or copper fungicide, remove infected leaves, and use Chlorothalonil spray.",
+    "prevention": "Crop rotation every 2-3 years, avoid wetting foliage, and use disease-free seeds."
+  },
+  "Tomato - Late Blight": {
+    "description": "Caused by Phytophthora infestans. Spreads rapidly in cool, moist conditions.",
+    "treatment": "Apply Metalaxyl or Cymoxanil immediately, remove all infected plants, and improve air circulation.",
+    "prevention": "Plant resistant varieties, avoid overhead irrigation, and apply preventive copper fungicide."
+  },
+  "Tomato - Leaf Curl Virus": {
+    "description": "Tomato Leaf Curl Virus spread by whiteflies. Causes severe leaf curling.",
+    "treatment": "Control whiteflies with Imidacloprid, remove and destroy infected plants, and apply Thiamethoxam.",
+    "prevention": "Use reflective mulches, grow resistant varieties, and inspect transplants before planting."
+  },
+  "Potato - Early Blight": {
+    "description": "Caused by Alternaria solani. Target-board-like spots on leaves.",
+    "treatment": "Apply Mancozeb or Azoxystrobin, remove infected debris, and balance nitrogen fertilization.",
+    "prevention": "Use certified seed potatoes, crop rotation, and maintain adequate plant spacing."
+  },
+  "Potato - Late Blight": {
+    "description": "Caused by Phytophthora infestans. One of the most destructive potato diseases.",
+    "treatment": "Apply Metalaxyl + Mancozeb immediately, destroy infected haulm, and harvest promptly in dry conditions.",
+    "prevention": "Plant resistant varieties (Kufri Jyoti), apply preventive fungicide, and avoid irrigation in cloudy weather."
+  },
+  "Grape - Black Rot": {
+    "description": "Caused by Guignardia bidwellii. Affects leaves and fruit.",
+    "treatment": "Apply Myclobutanil or Mancozeb, remove mummified fruit, and prune infected canes.",
+    "prevention": "Maintain open vine canopy, apply fungicide from bud break, and remove crop debris after harvest."
+  },
+  "Grape - Leaf Blight": {
+    "description": "Caused by Isariopsis clavispora. Irregular dark spots on grape leaves.",
+    "treatment": "Apply copper-based or Zineb fungicide, remove infected leaves, and improve canopy management.",
+    "prevention": "Good vine spacing and pruning, avoid wetting foliage, and apply preventive fungicide spray."
+  },
+  "Powdery Mildew": {
+    "description": "Fungal disease causing white powdery coating on leaf surfaces.",
+    "treatment": "Apply Sulphur-based fungicide, spray Neem oil (5ml/L), and remove heavily infected parts.",
+    "prevention": "Ensure good air circulation, avoid excess nitrogen fertilizer, and water at base not overhead."
+  },
+  "Bacterial Leaf Spot": {
+    "description": "Caused by Xanthomonas species. Water-soaked angular lesions.",
+    "treatment": "Apply copper hydroxide spray, remove infected debris immediately, and avoid working in wet crop.",
+    "prevention": "Use disease-free certified seeds, avoid overhead irrigation, and maintain proper plant spacing."
+  }
+}

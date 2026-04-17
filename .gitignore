@@ -1,0 +1,12 @@
+__pycache__/
+.pyc
+.venv/
+venv/
+instance/
+models/.h5
+uploads/
+training_logs/
+.env
+.DS_Store
+Thumbs.db
+.log

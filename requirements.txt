@@ -1,0 +1,20 @@
+# PlantCure — Python Dependencies
+# Web Framework
+flask>=2.3.0,<3.0.0
+flask-login>=0.6.2,<0.7.0
+flask-sqlalchemy>=3.0.0,<3.1.0
+werkzeug>=2.3.0,<3.0.0
+
+# Image Processing
+Pillow>=10.0.0,<11.0.0
+numpy>=1.26.0
+
+# Machine Learning (TensorFlow 2.x compatible)
+tensorflow >= 2.16
+keras >= 3.12
+scipy>=1.11.0
+
+# Additional useful packages
+opencv-python>=4.8.0
+python-dotenv>=1.0.0
+requests>=2.31.0

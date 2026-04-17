@@ -1,0 +1,229 @@
+
+{% extends "base.html" %}
+{% block title %}Detect{% endblock %}
+{% block page_title %}Detect Disease{% endblock %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/chatbot.css') }}">
+<input type="hidden" id="detected-disease" value="Unknown">
+<div class="page-hdr">
+  <div>
+    <h1 class="page-title">🔬 Plant Disease Detection</h1>
+    <p class="page-sub">Upload a leaf photo or use your camera for instant AI diagnosis.</p>
+  </div>
+</div>
+
+<div class="detect-layout">
+
+  <!-- ─── UPLOAD CARD ──────────────────────────────────────── -->
+  <div class="card">
+    <div class="card-hdr"><h3>📷 Upload Leaf Image</h3></div>
+
+    <!-- Drop zone -->
+    <div class="drop-zone" id="dropZone">
+      <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp" hidden/>
+      <div class="drop-ico">🍃</div>
+      <p class="drop-title">Drag &amp; drop a leaf image here</p>
+      <p class="drop-sub">or choose an option below</p>
+      <div class="drop-btns">
+        <button class="btn-primary" id="browseBtn">📁 Browse File</button>
+        <button class="btn-outline" id="cameraBtn">📸 Use Camera</button>
+      </div>
+      <p class="drop-hint">PNG · JPG · WEBP &nbsp;|&nbsp; Max 10 MB</p>
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-zone hidden" id="previewZone">
+      <img id="previewImg" src="" alt="" class="preview-img" decoding="async"/>
+      <div class="preview-bar">
+        <span id="previewNm" class="preview-nm"></span>
+        <button class="btn-icon-sm" id="removeBtn">✕</button>
+      </div>
+      <p class="drop-hint">Best accuracy: tomato, potato, grape, apple, corn, and pepper leaves.</p>
+      <button class="btn-success btn-full mt-12" id="analyzeBtn">
+        <span id="btnLabel">🔍 Analyze Plant</span>
+        <span id="btnSpin" class="spinner hidden"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ─── RESULT CARD ───────────────────────────────────────── -->
+  <div class="card hidden" id="resultCard">
+    <div class="result-head" id="resultHead">
+      <div class="res-ico" id="resIco">🌿</div>
+      <div class="res-title-blk">
+        <p class="res-lbl-sm">Diagnosis Result</p>
+        <h2 class="res-disease" id="resDis">—</h2>
+        <div class="res-badges">
+          <span class="badge" id="badgeSt">—</span>
+          <span class="badge badge-outline" id="badgeSev">—</span>
+        </div>
+      </div>
+      <div class="conf-wrap">
+        <svg class="conf-svg" viewBox="0 0 80 80">
+          <circle class="ring-bg" cx="40" cy="40" r="32"/>
+          <circle class="ring-fg" cx="40" cy="40" r="32" id="ringFg"/>
+        </svg>
+        <div class="conf-num-blk">
+          <span id="confNum">0</span><small>%</small>
+          <div class="conf-lbl">confidence</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-notice hidden" id="demoNotice">
+      ⚠️ <strong>Demo Mode:</strong> No trained model loaded.
+      Add <code>plant_model.h5</code> to <code>models/</code> for real predictions.
+    </div>
+
+    <div class="result-body">
+      <div class="info-blk hidden" id="resultImageBlk">
+        <h4>Uploaded image</h4>
+        <img id="resultPreviewImg" src="" alt="Uploaded leaf" class="preview-img"/>
+      </div>
+      <div class="info-blk">
+        <h4>📋 Plant Summary</h4>
+        <p id="resDesc">—</p>
+      </div>
+      <div class="info-blk hidden" id="plantProfileBlk">
+        <h4>🌿 Plant Care Snapshot</h4>
+        <div class="care-grid">
+          <div class="care-card"><h5>About</h5><p id="plantAbout">—</p></div>
+          <div class="care-card"><h5>Common Issues</h5><p id="plantIssues">—</p></div>
+          <div class="care-card"><h5>Light Requirements</h5><p id="plantLight">—</p></div>
+          <div class="care-card"><h5>Watering</h5><p id="plantWater">—</p></div>
+          <div class="care-card"><h5>Propagation</h5><p id="plantPropagation">—</p></div>
+        </div>
+      </div>
+      <div class="info-blk hidden" id="warningBlk">
+        <h4 style="color: #ff9800;">⚠️ Performance Note</h4>
+        <ul id="listWarnings" class="info-list"></ul>
+      </div>
+
+      <div class="info-blk hidden" id="topPredBlk">
+        <h4>🔎 Top predictions</h4>
+        <p class="drop-hint">When scores are close, retake the photo in natural light for a safer result.</p>
+        <ul id="listTopPred" class="info-list"></ul>
+      </div>
+      <div class="info-3col">
+        <div class="info-blk"><h4>🔬 Symptoms</h4><ul id="listSym" class="info-list"></ul></div>
+        <div class="info-blk"><h4>💊 Treatment</h4><ul id="listTreat" class="info-list"></ul></div>
+        <div class="info-blk"><h4>🛡️ Prevention</h4><ul id="listPrev" class="info-list"></ul></div>
+      </div>
+    </div>
+
+    <div class="result-foot">
+      <button class="btn-outline" id="tryAgain">⟳ Try Another</button>
+      <button class="btn-primary" id="saveBtn">💾 Save Report</button>
+    </div>
+  </div>
+
+  <!-- ─── ERROR CARD ────────────────────────────────────────── -->
+  <div class="card error-card hidden" id="errorCard">
+    <div class="error-ico">⚠️</div>
+    <p id="errorMsg" class="error-msg">Something went wrong.</p>
+    <button class="btn-outline" id="retryBtn">Try Again</button>
+  </div>
+
+  <!-- ─── AI CHATBOT WIDGET ────────────────────────────────────────── -->
+  <div id="chatbot-widget">
+      <div class="chat-header">
+          <div>
+            <p class="chat-kicker">Plant Care Assistant</p>
+            <h3 id="chat-disease-title">Treatment support</h3>
+          </div>
+          <button id="close-chat">×</button>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+          <div class="bot-message">
+            <strong>Plant care assistant ready.</strong>
+            <span id="chatbot-intro">Run a diagnosis to unlock treatment, prevention, and remedy guidance.</span>
+          </div>
+      </div>
+      <div class="quick-actions">
+          <button class="quick-action-btn" onclick="askQuickAction('treatment')">Show treatment steps</button>
+          <button class="quick-action-btn" onclick="askQuickAction('prevention')">Prevention tips</button>
+          <button class="quick-action-btn" onclick="askQuickAction('organic')">Organic remedies</button>
+          <button class="quick-action-btn" onclick="askQuickAction('chemical')">Chemical options</button>
+      </div>
+      <div class="chat-input">
+          <input type="text" id="user-input" placeholder="Ask about treatment, prevention, remedies...">
+          <button id="send-message">➤</button>
+      </div>
+  </div>
+  <button id="open-chatbot">💬 Plant Care Assistant</button>
+
+</div><!-- end detect-layout -->
+
+
+<!-- ════════════════════════════════════════════════════════
+     CAMERA MODAL
+     All IDs here MUST match getElementById calls in app.js
+     ════════════════════════════════════════════════════════ -->
+<div class="modal hidden" id="camModal">
+  <div class="modal-box">
+
+    <!-- Header -->
+    <div class="modal-hdr">
+      <div class="modal-hdr-left">
+        <span class="cam-title">📸 Live Camera</span>
+        <span class="cam-status-txt cam-st-info" id="camStatus">Starting...</span>
+      </div>
+      <button class="btn-icon-sm close-cam-btn" id="closeCam">✕</button>
+    </div>
+
+    <!-- Live video -->
+    <div class="cam-video-wrap">
+      <video id="camVideo" autoplay muted class="cam-video"></video>
+
+      <!-- 3-2-1 countdown overlay -->
+      <div class="cam-countdown hidden" id="cdEl">3</div>
+
+      <!-- Corner framing guides -->
+      <div class="cam-guide cam-guide-tl"></div>
+      <div class="cam-guide cam-guide-tr"></div>
+      <div class="cam-guide cam-guide-bl"></div>
+      <div class="cam-guide cam-guide-br"></div>
+
+      <!-- Instruction tip -->
+      <div class="cam-tip">
+        🍃 Centre the leaf · Good lighting · Hold steady
+      </div>
+    </div>
+
+    <!-- Quality bar (Laplacian Variance) -->
+    <div class="cam-quality">
+      <span class="q-title">Sharpness:</span>
+      <div class="q-track">
+        <div class="q-fill" id="qFill"></div>
+      </div>
+      <span class="q-label" id="qLabel">Checking...</span>
+    </div>
+
+    <!-- Controls -->
+    <div class="cam-controls">
+      <button class="btn-cam" id="switchCam">🔄 Switch</button>
+      <button class="btn-snap" id="snapBtn">
+        <span class="snap-ring"></span>
+        📸 Capture (3s)
+      </button>
+      <button class="btn-cam torch-btn" id="torchBtn">🔦 Flash</button>
+    </div>
+
+    <!-- Cancel -->
+    <div class="cam-footer">
+      <button class="btn-outline btn-full" id="cancelCam">Cancel</button>
+    </div>
+
+    <!-- Hidden canvas for frame capture -->
+    <canvas id="camCanvas" hidden></canvas>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/chatbot.js') }}"></script>
+{% endblock %}

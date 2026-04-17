@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — PlantCure</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"/>
+</head>
+<body class="auth-body">
+
+<div class="auth-wrap">
+
+  <!-- LEFT PANEL -->
+  <div class="auth-left">
+    <div class="auth-left-inner">
+      <div class="brand-logo">🌿 PlantCure</div>
+      <h1 class="auth-hero-title">Protect Your Crops<br/>with <span>AI Precision</span></h1>
+      <p class="auth-hero-sub">Upload a leaf photo and get an instant disease diagnosis powered by deep learning — in under 4 seconds.</p>
+      <div class="auth-stats">
+        <div class="astat"><strong>94.5%</strong><span>Accuracy</span></div>
+        <div class="astat"><strong>&lt; 4s</strong><span>Response</span></div>
+        <div class="astat"><strong>38</strong><span>Diseases</span></div>
+      </div>
+      <div class="leaf-art" aria-hidden="true">🍃</div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="auth-right">
+    <div class="auth-form-box">
+      <h2 class="form-title">Welcome back</h2>
+      <p class="form-sub">Sign in to your PlantCure account</p>
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat, msg in messages %}
+            <div class="flash flash-{{ cat }} flash-inline">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" action="{{ url_for('login') }}" class="auth-form">
+        <div class="field-group">
+          <label class="field-label" for="email">Email Address</label>
+          <input class="field-input" type="email" id="email" name="email"
+                 placeholder="you@example.com" required autocomplete="email"/>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label" for="password">
+            Password
+            <span class="label-hint">Min 6 characters</span>
+          </label>
+          <div class="password-wrap">
+            <input class="field-input" type="password" id="password" name="password"
+                   placeholder="Enter your password" required autocomplete="current-password"/>
+            <button type="button" class="pw-toggle" onclick="togglePw('password', this)">👁</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <label class="checkbox-label">
+            <input type="checkbox" name="remember"/> Remember me
+          </label>
+        </div>
+
+        <button type="submit" class="btn-auth">Sign In →</button>
+      </form>
+
+      <p class="auth-switch">
+        Don't have an account?
+        <a href="{{ url_for('register') }}">Create one free</a>
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  if (inp.type === "password") { inp.type = "text";     btn.textContent = "🙈"; }
+  else                         { inp.type = "password"; btn.textContent = "👁"; }
+}
+</script>
+</body>
+</html>
