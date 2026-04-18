@@ -115,6 +115,27 @@ DISEASE_INFO = {
         "treatment" : ["Apply Sulphur-based fungicide", "Spray Neem oil (5ml/L)", "Remove heavily infected parts"],
         "prevention": ["Ensure good air circulation", "Avoid excess nitrogen fertilizer", "Water at base not overhead"],
     },
+    "Rust": {
+        "status": "diseased", "severity": "High",
+        "description": "Fungal disease characterized by orange, yellow, or brown pustules.",
+        "symptoms"  : ["Orange or brown rusty spots/pustules", "Yellowing around spots", "Premature leaf drop", "Powdery spores on underside"],
+        "treatment" : ["Apply copper or sulphur fungicide", "Remove and destroy infected leaves", "Avoid overhead watering"],
+        "prevention": ["Plant resistant varieties", "Ensure good spacing/airflow", "Clean garden debris in autumn"],
+    },
+    "Apple Scab": {
+        "status": "diseased", "severity": "Moderate",
+        "description": "Fungal disease causing olive-green to black velvety spots.",
+        "symptoms"  : ["Olive-green or brown velvety spots", "Yellowing leaves", "Fruit with scabby lesions"],
+        "treatment" : ["Apply Myclobutanil or Captan", "Remove fallen leaves", "Prune for better airflow"],
+        "prevention": ["Plant resistant varieties", "Clear fallen leaves in winter", "Avoid wet foliage"],
+    },
+    "Northern Leaf Blight": {
+        "status": "diseased", "severity": "High",
+        "description": "Fungal disease causing cigar-shaped lesions on corn leaves.",
+        "symptoms"  : ["Long, tan cigar-shaped lesions", "Grayish-green spots", "Premature drying of leaves"],
+        "treatment" : ["Apply Azoxystrobin or Pyraclostrobin", "Rotate with non-grass crops", "Manage irrigation"],
+        "prevention": ["Use resistant hybrids", "Conventional tillage to bury debris", "Rotate crops"],
+    },
     "Bacterial Leaf Spot": {
         "status": "diseased", "severity": "Moderate",
         "description": "Caused by Xanthomonas species. Water-soaked angular lesions.",
@@ -152,13 +173,13 @@ KAGGLE_MAP = {
     "Grape___Esca_(Black_Measles)"                      : "Grape - Leaf Blight",
     "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)"        : "Grape - Leaf Blight",
     "Grape___healthy"                                   : "Healthy",
-    "Apple___Apple_scab"                                : "Bacterial Leaf Spot",
+    "Apple___Apple_scab"                                : "Apple Scab",
     "Apple___Black_rot"                                 : "Grape - Black Rot",
-    "Apple___Cedar_apple_rust"                          : "Powdery Mildew",
+    "Apple___Cedar_apple_rust"                          : "Rust",
     "Apple___healthy"                                   : "Healthy",
     "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "Bacterial Leaf Spot",
-    "Corn_(maize)___Common_rust_"                       : "Powdery Mildew",
-    "Corn_(maize)___Northern_Leaf_Blight"               : "Tomato - Early Blight",
+    "Corn_(maize)___Common_rust_"                       : "Rust",
+    "Corn_(maize)___Northern_Leaf_Blight"               : "Northern Leaf Blight",
     "Corn_(maize)___healthy"                            : "Healthy",
     "Pepper,_bell___Bacterial_spot"                     : "Bacterial Leaf Spot",
     "Pepper,_bell___healthy"                            : "Healthy",
@@ -248,7 +269,15 @@ class PlantDiseaseModel:
         self.class_labels = []
         self.loaded = False
         self.reason = "Not loaded."
-        
+        self._labels_mismatch = False
+
+        # Resolve paths relative to this file's directory
+        _this_dir = os.path.abspath(os.path.dirname(__file__))
+        if not os.path.isabs(model_path):
+            model_path = os.path.join(_this_dir, model_path)
+        if not os.path.isabs(labels_path):
+            labels_path = os.path.join(_this_dir, labels_path)
+
         if os.path.exists(model_path):
             try:
                 self.model = load_model(model_path, compile=False)
@@ -264,19 +293,94 @@ class PlantDiseaseModel:
                 with open(labels_path, 'r') as f:
                     self.class_labels = json.load(f)
             except Exception as e:
-                print(f"Error loading labels: {e}")
+                print(f"[ModelLoader] Error loading labels: {e}")
 
-        # LENIENT THRESHOLDS - Fixes the "invalid image" issue
+        # ── Sanity-check: labels vs model output layer size ────────────
+        if self.loaded and self.class_labels:
+            try:
+                model_out = self.model.output_shape[-1]
+                labels_count = len(self.class_labels)
+                if model_out != labels_count:
+                    self._labels_mismatch = True
+                    print(
+                        f"\n{'='*60}\n"
+                        f"[ModelLoader] ⚠️  CLASS COUNT MISMATCH DETECTED!\n"
+                        f"   Model output neurons : {model_out}\n"
+                        f"   Labels in JSON file  : {labels_count}\n"
+                        f"   This is why confidence shows as ~100% for only\n"
+                        f"   one or two classes — the model and labels file\n"
+                        f"   do not match. You must retrain the model against\n"
+                        f"   the full PlantVillage 38-class dataset.\n"
+                        f"   Run:  python train_model.py --dataset data/PlantVillage --epochs 30 --fine-tune\n"
+                        f"{'='*60}\n"
+                    )
+                    # Truncate labels to model output to avoid index errors
+                    if model_out < labels_count:
+                        self.class_labels = self.class_labels[:model_out]
+                else:
+                    print(f"[ModelLoader] ✓ Labels match model output ({labels_count} classes)")
+            except Exception:
+                pass  # non-fatal
+
+        # LENIENT THRESHOLDS
         self.min_confidence = 0.55
         self.low_confidence = 0.35
         self.reject_threshold = 0.15
         self.min_margin = 0.18
+
+        # Auto-detect input image size from the model (e.g. 128 or 224)
+        if self.loaded:
+            try:
+                self.img_size = self.model.input_shape[1]  # (None, H, W, 3) → H
+                print(f"[ModelLoader] Input size detected from model: {self.img_size}x{self.img_size}")
+            except Exception:
+                self.img_size = 128  # safe fallback
+        else:
+            self.img_size = 128
         
         # Image validation thresholds
         self.min_dimension = 80
         self.min_brightness = 15
         self.min_blur_threshold = 30
         self.min_green_percentage = 3
+        
+        # Load model metrics from training logs
+        self.metrics = self._load_metrics()
+
+    def _load_metrics(self):
+        """Find the latest CSV log and extract the last row of metrics"""
+        try:
+            log_dir = os.path.join(BASE_DIR, "training_logs")
+            if not os.path.isdir(log_dir):
+                return {}
+            
+            logs = [f for f in os.listdir(log_dir) if f.endswith(".csv")]
+            if not logs:
+                return {}
+            
+            # Sort by date in filename (format: YYYYMMDD_HHMMSS_...)
+            latest_log = sorted(logs)[-1]
+            log_path = os.path.join(log_dir, latest_log)
+            
+            import csv
+            with open(log_path, "r") as f:
+                reader = csv.DictReader(f)
+                rows = list(reader)
+                if not rows:
+                    return {}
+                last_row = rows[-1]
+                return {
+                    "accuracy": round(float(last_row.get("accuracy", 0)) * 100, 1),
+                    "val_accuracy": round(float(last_row.get("val_accuracy", 0)) * 100, 1),
+                    "loss": round(float(last_row.get("loss", 0)), 3),
+                    "val_loss": round(float(last_row.get("val_loss", 0)), 3),
+                    "epoch": int(float(last_row.get("epoch", 0))) + 1,
+                    "log_file": latest_log
+                }
+        except Exception as e:
+            print(f"[ModelLoader] Error loading metrics: {e}")
+            return {}
+        return {}
         
     def auto_enhance_image(self, image):
         """Automatically enhance poor quality images"""
@@ -356,9 +460,9 @@ class PlantDiseaseModel:
         return len(issues) == 0, issues, warnings, image
     
     def test_time_augmentation(self, image):
-        """Perform Test-Time Augmentation (TTA) for more stable predictions"""
-        # Original
-        processed_orig = cv2.resize(image, (224, 224))
+        """Perform TTA — input size read from self.img_size (auto-detected from model)"""
+        sz = self.img_size  # e.g. 128 or 224 depending on what was trained
+        processed_orig = cv2.resize(image, (sz, sz))
         processed_orig = processed_orig.astype('float32') / 255.0
         
         # Logically different versions: Flip, Rotate, Brightness adjust
@@ -498,5 +602,8 @@ def model_health() -> dict:
     return {
         "loaded": _model_instance.loaded,
         "reason": _model_instance.reason,
-        "class_count": len(_model_instance.class_labels)
+        "class_count": len(_model_instance.class_labels),
+        "labels_mismatch": _model_instance._labels_mismatch,
+        "img_size": _model_instance.img_size,
+        "metrics": _model_instance.metrics
     }

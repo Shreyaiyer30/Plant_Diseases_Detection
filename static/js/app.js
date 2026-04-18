@@ -862,65 +862,41 @@ function showResult(data) {
   const isUncertain = data.status === "uncertain";
   const cls = isUncertain ? "uncertain" : (data.status || "diseased");
 
-  resultHead.className     = `result-head ${cls}`;
+  // Status mapping for badges
+  const statusEl = document.getElementById("badgeSt");
+  if (statusEl) {
+    statusEl.textContent = isUncertain ? "Uncertain" : (healthy ? "Healthy" : "Diseased");
+    statusEl.className = "status-badge " + (healthy ? "status-healthy" : "status-diseased");
+  }
+
   resultEmoji.textContent  = healthy ? "✅" : (isUncertain ? "❓" : (data.status === "error" ? "⚠️" : "🦠"));
   resultDis.textContent    = data.disease || "Unknown";
-  badgeStatus.textContent  = isUncertain ? "UNCERTAIN RESULT" : (data.status || "—").toUpperCase();
-  badgeStatus.className    = `badge badge-${cls}`;
-  badgeSeverity.textContent = isUncertain ? "Threshold Check" : `Severity: ${data.severity || "—"}`;
+  
+  if (badgeSeverity) {
+    badgeSeverity.textContent = `Severity: ${data.severity || "Normal"}`;
+  }
 
-  // Animate confidence ring
-  const conf  = parseFloat(data.confidence) || 0;
-  const circ  = 2 * Math.PI * 32;           // circumference for r=32
-  const offset = circ * (1 - conf / 100);
-  ringFg.style.strokeDashoffset = offset;
+  // Update horizontal confidence bar
+  const conf = parseFloat(data.confidence) || 0;
+  if (ringFg) {
+    ringFg.style.width = conf + "%";
+    // Color logic
+    if (healthy) ringFg.style.background = "var(--g6)";
+    else if (isUncertain) ringFg.style.background = "var(--a5)";
+    else ringFg.style.background = "var(--r5)";
+  }
   
-  // Dynamic color for ring
-  if (healthy) ringFg.style.stroke = "#16a34a";
-  else if (isUncertain) ringFg.style.stroke = "#f97316"; // Orange for uncertain
-  else ringFg.style.stroke = "#ef4444"; // Red for diseased
-  
-  animateNum(confNum, conf, 1200);
+  if (confNum) {
+    confNum.textContent = Math.round(conf) + "%";
+  }
 
   resultDesc.textContent = data.result_summary || data.description || "—";
-  if (data.plant_details && plantProfileBlk) {
-    plantProfileBlk.classList.remove("hidden");
-    plantAbout.textContent = data.plant_details.about || "—";
-    plantIssues.textContent = data.plant_details.common_issues || "—";
-    plantLight.textContent = data.plant_details.light_requirements || "—";
-    plantWater.textContent = data.plant_details.watering || "—";
-    plantPropagation.textContent = data.plant_details.propagation || "—";
-  } else {
-    plantProfileBlk?.classList.add("hidden");
-  }
-  if (resultImageBlk && resultPreviewImg && previewImg?.src) {
-    resultPreviewImg.src = previewImg.src;
-    resultPreviewImg.alt = previewImg.alt || "Uploaded leaf";
-    resultImageBlk.classList.remove("hidden");
-  } else {
-    resultImageBlk?.classList.add("hidden");
-  }
   
-  if (data.warnings && data.warnings.length) {
-    warningBlk?.classList.remove("hidden");
-    fillList(listWarnings, data.warnings);
-  } else {
-    warningBlk?.classList.add("hidden");
-  }
-
+  // Minimal data filling for 3-column grid
   fillList(listSymptoms,  data.symptoms   || []);
   fillList(listTreatment, data.treatment  || []);
   fillList(listPrevent,   data.prevention || []);
-  if (topPredBlk && listTopPred && Array.isArray(data.top_predictions) && data.top_predictions.length) {
-    topPredBlk.classList.remove("hidden");
-    listTopPred.innerHTML = data.top_predictions
-      .map((p) => `<li><strong>${p.label}</strong>: ${p.confidence}%</li>`)
-      .join("");
-  } else {
-    topPredBlk?.classList.add("hidden");
-  }
-  demoNotice?.classList.toggle("hidden", !data.placeholder);
-
+  
   lastResult = data;
   openChatForResult(data);
   resultCard.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -1006,4 +982,13 @@ function openChatForResult(data) {
     openChatBtn.style.display = 'block';
   }
   
-  const chatMessages
+  const chatMessages = document.getElementById('chat-messages');
+  if (chatMessages) {
+    chatMessages.innerHTML = '';
+    const intro = `Diagnosis loaded: ${data.disease || "Unknown"}.\n\n${data.result_summary || data.description || "Ask what to do next."}`;
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'bot-message';
+    msgDiv.textContent = intro;
+    chatMessages.appendChild(msgDiv);
+  }
+}

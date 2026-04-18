@@ -22,14 +22,14 @@
     <!-- Drop zone -->
     <div class="drop-zone" id="dropZone">
       <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp" hidden/>
-      <div class="drop-ico">🍃</div>
-      <p class="drop-title">Drag &amp; drop a leaf image here</p>
-      <p class="drop-sub">or choose an option below</p>
+      <div class="drop-ico-tile">🍃</div>
+      <p class="drop-title">Drag and drop leaf image</p>
+      <p class="drop-sub">JPG, PNG or WEBP (max 10MB)</p>
       <div class="drop-btns">
-        <button class="btn-primary" id="browseBtn">📁 Browse File</button>
-        <button class="btn-outline" id="cameraBtn">📸 Use Camera</button>
+        <button class="btn-primary" id="browseBtn">Browse Computer</button>
+        <button class="btn-outline" id="cameraBtn">Use Camera</button>
       </div>
-      <p class="drop-hint">PNG · JPG · WEBP &nbsp;|&nbsp; Max 10 MB</p>
+      <p class="drop-hint">Works best with single leaves on solid backgrounds</p>
     </div>
 
     <!-- Preview -->
@@ -50,23 +50,25 @@
   <!-- ─── RESULT CARD ───────────────────────────────────────── -->
   <div class="card hidden" id="resultCard">
     <div class="result-head" id="resultHead">
-      <div class="res-ico" id="resIco">🌿</div>
+      <div class="res-ico-tile" id="resIco">🌱</div>
       <div class="res-title-blk">
-        <p class="res-lbl-sm">Diagnosis Result</p>
+        <div class="res-metadata">
+          <span class="res-lbl-caps">Diagnostics</span>
+          <span class="status-badge" id="badgeSt">Healthy</span>
+        </div>
         <h2 class="res-disease" id="resDis">—</h2>
         <div class="res-badges">
-          <span class="badge" id="badgeSt">—</span>
-          <span class="badge badge-outline" id="badgeSev">—</span>
+          <span class="badge badge-outline" id="badgeSev">Normal</span>
         </div>
       </div>
-      <div class="conf-wrap">
-        <svg class="conf-svg" viewBox="0 0 80 80">
-          <circle class="ring-bg" cx="40" cy="40" r="32"/>
-          <circle class="ring-fg" cx="40" cy="40" r="32" id="ringFg"/>
-        </svg>
-        <div class="conf-num-blk">
-          <span id="confNum">0</span><small>%</small>
-          <div class="conf-lbl">confidence</div>
+      
+      <div class="conf-mini-wrap">
+        <div class="conf-bar-txt">
+          <span>AI Confidence</span>
+          <span id="confNum">0%</span>
+        </div>
+        <div class="conf-bar-track">
+          <div class="conf-bar-fill" id="ringFg" style="width: 0%"></div>
         </div>
       </div>
     </div>
@@ -77,38 +79,15 @@
     </div>
 
     <div class="result-body">
-      <div class="info-blk hidden" id="resultImageBlk">
-        <h4>Uploaded image</h4>
-        <img id="resultPreviewImg" src="" alt="Uploaded leaf" class="preview-img"/>
-      </div>
       <div class="info-blk">
-        <h4>📋 Plant Summary</h4>
-        <p id="resDesc">—</p>
-      </div>
-      <div class="info-blk hidden" id="plantProfileBlk">
-        <h4>🌿 Plant Care Snapshot</h4>
-        <div class="care-grid">
-          <div class="care-card"><h5>About</h5><p id="plantAbout">—</p></div>
-          <div class="care-card"><h5>Common Issues</h5><p id="plantIssues">—</p></div>
-          <div class="care-card"><h5>Light Requirements</h5><p id="plantLight">—</p></div>
-          <div class="care-card"><h5>Watering</h5><p id="plantWater">—</p></div>
-          <div class="care-card"><h5>Propagation</h5><p id="plantPropagation">—</p></div>
-        </div>
-      </div>
-      <div class="info-blk hidden" id="warningBlk">
-        <h4 style="color: #ff9800;">⚠️ Performance Note</h4>
-        <ul id="listWarnings" class="info-list"></ul>
+        <h4>Plant Summary</h4>
+        <p id="resDesc" style="color: var(--n7); line-height: 1.6;">—</p>
       </div>
 
-      <div class="info-blk hidden" id="topPredBlk">
-        <h4>🔎 Top predictions</h4>
-        <p class="drop-hint">When scores are close, retake the photo in natural light for a safer result.</p>
-        <ul id="listTopPred" class="info-list"></ul>
-      </div>
       <div class="info-3col">
-        <div class="info-blk"><h4>🔬 Symptoms</h4><ul id="listSym" class="info-list"></ul></div>
-        <div class="info-blk"><h4>💊 Treatment</h4><ul id="listTreat" class="info-list"></ul></div>
-        <div class="info-blk"><h4>🛡️ Prevention</h4><ul id="listPrev" class="info-list"></ul></div>
+        <div class="info-blk"><h4>Symptoms</h4><ul id="listSym" class="info-list"></ul></div>
+        <div class="info-blk"><h4>Treatment</h4><ul id="listTreat" class="info-list"></ul></div>
+        <div class="info-blk"><h4>Prevention</h4><ul id="listPrev" class="info-list"></ul></div>
       </div>
     </div>
 

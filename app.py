@@ -18,6 +18,8 @@ from flask_login import (LoginManager, UserMixin, login_user,
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from model_loader import predict_disease, model_health
+import json
+from disease_knowledge import DiseaseKnowledgeBase 
 
 BASE_DIR      = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
@@ -45,7 +47,7 @@ login_manager.login_message          = "Please log in to continue."
 login_manager.login_message_category = "info"
 
 app.jinja_env.auto_reload = True
-
+knowledge_base = DiseaseKnowledgeBase()
 @app.after_request
 def add_no_cache_headers(response):
     # Helps when UI/CSS/JS updates seem not applied due browser cache.
@@ -88,6 +90,7 @@ class Prediction(db.Model):
             "confidence": round(self.confidence, 1),
             "status"    : self.status,
             "severity"  : self.severity,
+            "filename"  : self.filename,
             "timestamp" : self.timestamp.isoformat(timespec="seconds"),
         }
 
@@ -424,19 +427,7 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    uid      = current_user.id
-    total    = Prediction.query.filter_by(user_id=uid).count()
-    healthy  = Prediction.query.filter_by(user_id=uid, status="healthy").count()
-    avg_conf = (db.session.query(db.func.avg(Prediction.confidence))
-                .filter(Prediction.user_id == uid)
-                .scalar() or 0.0)
-    recent   = (Prediction.query.filter_by(user_id=uid)
-                .order_by(Prediction.timestamp.desc()).limit(6).all())
-    return render_template("dashboard.html",
-                           total=total, healthy=healthy,
-                           diseased=total-healthy,
-                           avg_conf=round(float(avg_conf), 1),
-                           recent=recent)
+    return render_template("main_spa.html")
 
 @app.route("/uploads/<path:filename>")
 @login_required
@@ -457,19 +448,17 @@ def serve_upload(filename):
 @app.route("/detect")
 @login_required
 def detect():
-    return render_template("detect.html")
+    return render_template("main_spa.html")
 
 @app.route("/history")
 @login_required
 def history():
-    preds = (Prediction.query.filter_by(user_id=current_user.id)
-             .order_by(Prediction.timestamp.desc()).all())
-    return render_template("history.html", predictions=preds)
+    return render_template("main_spa.html")
 
 @app.route("/analytics")
 @login_required
 def analytics():
-    return render_template("analytics.html")
+    return render_template("main_spa.html")
 
 # ── API: Predict ──────────────────────────────────────────────────
 @app.route("/api/predict", methods=["POST"])
@@ -486,6 +475,7 @@ def api_predict():
     filepath = os.path.join(UPLOAD_FOLDER, filename)
     file.save(filepath)
 
+    # Get prediction from model
     result = predict_disease(filepath)
 
     if result.get("model_unavailable"):
@@ -496,7 +486,6 @@ def api_predict():
         return jsonify(result), 503
 
     if result.get("invalid_image"):
-        # Do not store non-plant/invalid uploads as diagnosis records.
         try:
             os.remove(filepath)
         except Exception:
@@ -509,20 +498,39 @@ def api_predict():
             "suggestions": result.get("suggestions", [])
         }), 422
 
+    # Get disease name from prediction
+    disease_name = result.get("disease", "Unknown")
+    confidence = float(result.get("confidence", 0))
+    severity = result.get("severity", "Medium")
+    
+    # Get dynamic symptoms, treatment, prevention from knowledge base
+    disease_info = knowledge_base.get_all_info(disease_name)
+    
+    # Save to database
     pred = Prediction(
         user_id    = current_user.id,
         filename   = filename,
-        disease    = result.get("disease", "Unknown"),
-        confidence = float(result.get("confidence", 0)),
+        disease    = disease_name,
+        confidence = confidence,
         status     = result.get("status", "unknown"),
-        severity   = result.get("severity", "Unknown"),
+        severity   = severity,
     )
-    db.session.add(pred); db.session.commit()
+    db.session.add(pred)
+    db.session.commit()
     
+    # Return enriched response
     return jsonify({
-        **result,
+        "success": True,
         "record_id": pred.id,
-        "success": True
+        "disease": disease_name,
+        "confidence": confidence,
+        "severity": severity,
+        "status": result.get("status", "unknown"),
+        "symptoms": disease_info.get("symptoms", []),
+        "treatment": disease_info.get("treatment", []),
+        "prevention": disease_info.get("prevention", []),
+        "organic_remedies": disease_info.get("organic_remedies", []),
+        "chemical_remedies": disease_info.get("chemical_remedies", [])
     })
 
 # ── API: AI Chatbot ───────────────────────────────────────────────
@@ -568,22 +576,36 @@ def save_chat_history():
     return jsonify({"status": "success"})
 
 def get_fallback_response(crop, disease, severity, messages):
-    """Rule-based fallback if API is unavailable. Uses slot filling over full chat, not message count."""
+    """Rule-based fallback if API is unavailable."""
     latest_raw = _latest_user_message(messages)
     latest = latest_raw.lower()
     slots = _fallback_parse_slots(messages)
-
+    
+    # Get disease-specific info from knowledge base
+    disease_info = knowledge_base.get_all_info(disease)
+    
     if _is_irrelevant_to_plantcare(latest_raw):
         return (
             "I am specialized in plant disease diagnosis and treatment guidance only. "
             "Please ask me about symptoms, sprays, fertilizer, watering, prevention, or recovery plan for your plant."
         )
-
+    
+    # If user asks for treatment, return from knowledge base
+    if _is_treatment_question(latest_raw):
+        treatment_steps = disease_info.get("treatment", [])
+        if treatment_steps:
+            return f"For **{disease}** (severity: {severity}), here's what to do:\n\n" + \
+                   "\n".join([f"• {step}" for step in treatment_steps[:3]])
+    
+    # Rest of your existing fallback logic...
     if _is_greeting_only(latest_raw):
         return (
             f"Hi. The last scan shows **{disease}** (severity: {severity}). "
-            "What do you see on the plant, or ask how to treat it - I will answer that first."
+            f"Symptoms include: {', '.join(disease_info.get('symptoms', ['leaf changes'])[:2])}. "
+            "What would you like to know about treatment or prevention?"
         )
+    
+
 
     if _user_says_already_told(latest_raw):
         summ = _slots_summary(slots)

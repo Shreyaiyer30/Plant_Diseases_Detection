@@ -99,4 +99,11 @@ document.addEventListener('DOMContentLoaded', function() {
             case 'treatment': question = "Show treatment steps"; break;
             case 'prevention': question = "Prevention tips"; break;
             case 'organic': question = "Organic remedies"; break;
-            case 'chemical':
+            case 'chemical': question = "Chemical options"; break;
+        }
+        if (question) {
+            userInput.value = question;
+            sendMessage();
+        }
+    };
+});

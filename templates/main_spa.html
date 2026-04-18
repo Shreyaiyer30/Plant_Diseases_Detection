@@ -1,0 +1,764 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PlantCure — AI Disease Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f2ed;
+      --fg: #1a3a2a;
+      --wh: #ffffff;
+      --sand: #e8e4db;
+      --text: #2c2c2c;
+      --muted: #8c8c8c;
+      --green-soft: #f0f7f0;
+      --red-warm: #d9534f;
+      --font-serif: 'DM Serif Display', serif;
+      --font-sans: 'DM Sans', sans-serif;
+      --sh: 0 4px 12px rgba(0,0,0,0.03);
+      --tr: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-sans); background: var(--bg); color: var(--text); line-height: 1.5; overflow-x: hidden; }
+    
+    /* Layout */
+    .app-shell { display: flex; min-height: 100vh; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: 200px;
+      background: var(--fg);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      height: 100vh;
+      z-index: 100;
+    }
+    .sb-logo {
+      padding: 32px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-img {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      object-fit: cover;
+      display: block;
+    }
+    .logo-text {
+      font-family: var(--font-serif);
+      font-size: 22px;
+      color: var(--wh);
+      letter-spacing: -0.01em;
+    }
+    .sb-nav { flex: 1; padding: 0 12px; }
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      border-radius: 8px;
+      color: rgba(255,255,255,0.5);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: var(--tr);
+      margin-bottom: 4px;
+    }
+    .nav-btn:hover { color: var(--wh); background: rgba(255,255,255,0.05); }
+    .nav-btn.active {
+      background: rgba(255,255,255,0.1);
+      color: var(--wh);
+    }
+    .nav-dot {
+      width: 4px;
+      height: 4px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      transition: var(--tr);
+    }
+    .nav-btn.active .nav-dot { background: var(--wh); }
+    
+    .sb-user {
+      padding: 20px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-av {
+      width: 32px;
+      height: 32px;
+      background: rgba(255,255,255,0.1);
+      color: var(--wh);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .user-info { flex: 1; overflow: hidden; }
+    .user-nm { font-size: 12px; font-weight: 700; color: var(--wh); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+    .user-rl { font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; }
+    .btn-logout { color: rgba(255,255,255,0.4); text-decoration: none; font-size: 14px; }
+    .btn-logout:hover { color: var(--wh); }
+
+    /* Main Content */
+    .main-wrap { flex: 1; margin-left: 200px; min-height: 100vh; padding: 40px; }
+    .view-container { max-width: 1000px; margin: 0 auto; }
+    
+    h1 { font-family: var(--font-serif); font-size: 32px; margin-bottom: 8px; letter-spacing: -0.02em; }
+    .h-sub { color: var(--muted); font-size: 14px; margin-bottom: 32px; }
+
+    /* Cards */
+    .card { background: var(--wh); border: 1px solid var(--sand); border-radius: 12px; padding: 24px; box-shadow: var(--sh); margin-bottom: 24px; }
+    .card-title { font-family: var(--font-serif); font-size: 18px; margin-bottom: 20px; color: var(--fg); border-bottom: 1px solid var(--sand); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .card-link { font-size: 12px; font-family: var(--font-sans); font-weight: 700; color: var(--fg); text-decoration: none; }
+
+    /* Metric Cards */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+    .kpi { background: var(--wh); border: 1px solid var(--sand); border-radius: 12px; padding: 20px; box-shadow: var(--sh); }
+    .kpi-l { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+    .kpi-v { font-size: 24px; font-weight: 700; color: var(--fg); }
+
+    /* Dashboard CTA */
+    .cta-strip { display: flex; align-items: center; justify-content: space-between; gap: 24px; background: var(--fg); color: var(--wh); padding: 24px 32px; border-radius: 12px; margin-bottom: 32px; }
+    .cta-text h3 { font-family: var(--font-serif); color: var(--wh); border: none; margin: 0; font-size: 20px; }
+    .cta-text p { font-size: 13px; opacity: 0.8; }
+    .btn-cta { background: var(--wh); color: var(--fg); font-weight: 700; padding: 10px 24px; border-radius: 8px; font-size: 13px; border: none; cursor: pointer; transition: var(--tr); }
+    .btn-cta:hover { transform: translateY(-2px); }
+
+    /* Recent Table-ish list */
+    .recent-list { display: flex; flex-direction: column; }
+    .recent-item { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f9f8f6; gap: 16px; }
+    .recent-item:last-child { border-bottom: none; }
+    .recent-thumb { width: 44px; height: 44px; border-radius: 8px; background: #e8e4db; object-fit: cover; }
+    .recent-info { flex: 1; }
+    .recent-name { font-weight: 700; font-size: 14px; color: var(--fg); }
+    .recent-date { font-size: 12px; color: var(--muted); }
+    .status-pill { padding: 4px 10px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .status-healthy { background: #e6f4ea; color: #1e7e34; }
+    .status-diseased { background: #fdf2f2; color: #b91c1c; }
+
+    /* Detection Page */
+    .upload-box { border: 1px dashed var(--sand); padding: 48px; border-radius: 12px; text-align: center; cursor: pointer; transition: var(--tr); background: #fafafa; }
+    .upload-box:hover { border-color: var(--fg); background: var(--wh); }
+    .upload-ico { width: 56px; height: 56px; background: var(--green-soft); color: var(--fg); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin: 0 auto 16px; }
+    .btn-primary { background: var(--fg); color: var(--wh); border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; transition: var(--tr); }
+    .btn-secondary { background: transparent; border: 1px solid var(--sand); color: var(--muted); padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 13px; cursor: pointer; margin-left: 8px; transition: var(--tr); }
+    .btn-secondary:hover { border-color: var(--fg); color: var(--fg); }
+    
+    .file-preview { margin-top: 20px; background: var(--wh); border: 1px solid var(--sand); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; animation: slideUp 0.4s ease; }
+    .preview-thumb { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; }
+    .btn-analyse { margin-left: auto; }
+
+    /* History & Tables */
+    .history-card { padding: 0; }
+    .h-row { display: flex; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--sand); gap: 20px; }
+    .h-row:last-child { border-bottom: none; }
+    .h-info { flex: 1.5; }
+    .h-stats { flex: 2; display: flex; align-items: center; gap: 24px; }
+    .c-bar-wrap { flex: 1; }
+    .c-bar-bg { height: 4px; background: #f0f0f0; border-radius: 2px; margin-top: 4px; }
+    .c-bar-fill { height: 100%; border-radius: 2px; background: var(--fg); transition: width 1s ease; }
+    .h-del { background: transparent; border: none; color: var(--muted); cursor: pointer; padding: 8px; border-radius: 6px; transition: var(--tr); }
+    .h-del:hover { color: var(--red-warm); background: #fff5f5; }
+
+    /* Analytics */
+    .analytics-top { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .donut-wrap { display: flex; flex-direction: column; align-items: center; }
+    .donut-svg { width: 120px; height: 120px; transform: rotate(-90deg); }
+    .donut-ring { fill: none; stroke: var(--sand); stroke-width: 8; }
+    .donut-fill { fill: none; stroke: var(--fg); stroke-width: 8; stroke-dasharray: 100 100; transition: stroke-dasharray 1s ease; }
+    .legend { display: flex; gap: 16px; margin-top: 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); }
+    .leg-item { display: flex; align-items: center; gap: 6px; }
+    .dot-s { width: 8px; height: 8px; border-radius: 50%; }
+
+    .bar-chart { display: flex; flex-direction: column; gap: 12px; }
+    .bar-item { display: flex; align-items: center; gap: 12px; }
+    .bar-label { font-size: 11px; font-weight: 700; width: 80px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .bar-track { flex: 1; height: 12px; background: #f0f0f0; border-radius: 2px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--fg); transition: width 0.8s ease; }
+    .bar-val { font-size: 11px; font-weight: 700; width: 24px; color: var(--muted); }
+
+    /* Chat Widget */
+    .chat-widget {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 320px;
+      background: var(--wh);
+      border: 1px solid var(--sand);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+      overflow: hidden;
+      transition: height 0.3s ease;
+    }
+    .chat-widget.collapsed { height: 48px; }
+    .chat-hdr {
+      padding: 12px 16px;
+      background: var(--wh);
+      border-bottom: 1px solid var(--sand);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+    }
+    .chat-hdr h4 { font-family: var(--font-serif); font-size: 14px; color: var(--fg); display: flex; align-items: center; gap: 8px; }
+    .online-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; }
+    .chat-body { flex: 1; height: 320px; overflow-y: auto; padding: 16px; background: #fdfcfb; display: flex; flex-direction: column; gap: 12px; }
+    .msg { font-size: 13px; max-width: 85%; padding: 10px 12px; border-radius: 8px; line-height: 1.5; }
+    .msg-bot { background: #f1f5f9; color: var(--text); border-bottom-left-radius: 2px; }
+    .msg-user { background: var(--fg); color: var(--wh); align-self: flex-end; border-bottom-right-radius: 2px; }
+    
+    .chat-pills { padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--sand); }
+    .pill { border: 1px solid var(--sand); background: transparent; color: var(--muted); font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 4px 10px; border-radius: 4px; cursor: pointer; transition: 0.2s; }
+    .pill:hover { border-color: var(--fg); color: var(--fg); }
+    .chat-input-bar { padding: 12px 16px; display: flex; gap: 8px; border-top: 1px solid var(--sand); }
+    .chat-input-bar input { flex: 1; border: 1px solid var(--sand); border-radius: 6px; padding: 8px 12px; font-size: 13px; outline: none; }
+    .btn-send { background: var(--fg); color: var(--wh); border: none; border-radius: 6px; width: 34px; height: 34px; cursor: pointer; font-size: 14px; }
+
+    /* Animations */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .view { display: none; animation: fadeIn 0.4s ease, slideUp 0.4s ease; }
+    .view.active { display: block; }
+
+    /* Results Grid */
+    .result-view { margin-top: 32px; }
+    .res-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .res-blk h5 { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 12px; }
+    .res-list { list-style: none; font-size: 13px; color: var(--text); }
+    .res-list li { margin-bottom: 8px; position: relative; padding-left: 14px; }
+    .res-list li::before { content: "•"; position: absolute; left: 0; color: var(--sand); }
+
+    /* Spinner */
+    .spinner-overlay { position: fixed; inset: 0; background: rgba(245,242,237,0.8); z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+    .spinner { width: 32px; height: 32px; border: 3px solid var(--sand); border-top-color: var(--fg); border-radius: 50%; animation: rot 0.8s linear infinite; }
+    @keyframes rot { to { transform: rotate(360deg); } }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); transition: 0.3s ease; }
+      .main-wrap { margin-left: 0; padding: 20px; }
+      .kpi-grid { grid-template-columns: 1fr 1fr; }
+      .analytics-top { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="spinner-overlay" id="global-spinner">
+  <div class="spinner"></div>
+  <p style="font-family: var(--font-serif); color: var(--fg); font-size: 14px;">Analysing leaf patterns...</p>
+</div>
+
+<div class="app-shell">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <img src="/static/img/plantcure_logo.png" alt="logo" class="logo-img">
+      <span class="logo-text">PlantCure</span>
+    </div>
+    <nav class="sb-nav">
+      <div class="nav-btn active" data-view="dashboard">
+        <div class="nav-dot"></div> Dashboard
+      </div>
+      <div class="nav-btn" data-view="detect">
+        <div class="nav-dot"></div> Detect Disease
+      </div>
+      <div class="nav-btn" data-view="history">
+        <div class="nav-dot"></div> History
+      </div>
+      <div class="nav-btn" data-view="analytics">
+        <div class="nav-dot"></div> Analytics
+      </div>
+    </nav>
+    <div class="sb-user">
+      <div class="user-av" id="user-av">U</div>
+      <div class="user-info">
+        <div class="user-nm" id="user-nm">User Name</div>
+        <div class="user-rl">Farmer</div>
+      </div>
+      <a href="/logout" class="btn-logout">⏻</a>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-wrap">
+    <div class="view-container">
+      
+      <!-- DASHBOARD VIEW -->
+      <section id="dashboard" class="view active">
+        <h1>Dashboard</h1>
+        <p class="h-sub">Welcome back. Here's your plant health overview.</p>
+        
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi-l">Total Scans</div>
+            <div class="kpi-v" id="stat-total">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-l">Healthy</div>
+            <div class="kpi-v" id="stat-healthy">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-l">Diseased</div>
+            <div class="kpi-v" id="stat-diseased">0</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-l">Avg Confidence</div>
+            <div class="kpi-v" id="stat-conf">0%</div>
+          </div>
+        </div>
+
+        <div class="cta-strip">
+          <div class="cta-text">
+            <h3>New Diagnosis</h3>
+            <p>Upload a clear photo of a leaf to identify threats early.</p>
+          </div>
+          <button class="btn-cta" onclick="switchView('detect')">Start Scan</button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            Recent Diagnoses
+            <a href="#" class="card-link" onclick="switchView('history')">VIEW ALL →</a>
+          </div>
+          <div class="recent-list" id="dashboard-recent">
+            <!-- Items injected by JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- DETECT VIEW -->
+      <section id="detect" class="view">
+        <h1>Detect Disease</h1>
+        <p class="h-sub">Analyse leaf images in seconds using artificial intelligence.</p>
+        
+        <div class="card">
+          <div class="upload-box" id="drop-zone">
+            <div class="upload-ico">🍃</div>
+            <p style="font-family: var(--font-serif); font-size: 18px; margin-bottom: 8px;">Upload leaf photo</p>
+            <p style="font-size: 13px; color: var(--muted); margin-bottom: 24px;">Drag and drop or click to browse</p>
+            <div>
+              <button class="btn-primary" onclick="document.getElementById('file-input').click()">Browse file</button>
+              <button class="btn-secondary">Use camera</button>
+            </div>
+            <input type="file" id="file-input" hidden accept="image/*">
+          </div>
+
+          <div class="file-preview" id="file-preview" style="display: none;">
+            <img src="" alt="preview" class="preview-thumb" id="preview-img">
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--fg);" id="preview-name">Leaf.jpg</div>
+              <div style="font-size: 11px; color: var(--muted);" id="preview-size">1.2 MB</div>
+            </div>
+            <button class="btn-primary btn-analyse" id="btn-analyse">Analyse →</button>
+          </div>
+        </div>
+
+        <div class="result-view" id="result-view" style="display: none;">
+          <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px;">
+              <div>
+                <div id="res-status-pill" class="status-pill status-healthy" style="display: inline-block; margin-bottom: 8px;">Healthy</div>
+                <h2 style="font-family: var(--font-serif); font-size: 28px;" id="res-disease-name">Plant is Healthy</h2>
+              </div>
+              <div style="text-align: right; width: 140px;">
+                <div style="font-size: 11px; font-weight: 700; color: var(--muted);" id="res-health-label">PLANT HEALTH</div>
+                <div style="font-size: 20px; font-weight: 700; color: var(--fg); margin: 2px 0;" id="res-health-val">98%</div>
+                <div class="c-bar-bg"><div class="c-bar-fill" id="res-health-bar" style="width: 98%;"></div></div>
+              </div>
+            </div>
+            
+            <p style="font-size: 14px; color: var(--text); border-top: 1px solid var(--sand); padding-top: 20px; margin-bottom: 32px;" id="res-summary">
+              Your plant appears to be in great condition. No immediate action needed.
+            </p>
+
+            <div class="res-grid">
+              <div class="res-blk">
+                <h5>Symptoms</h5>
+                <ul class="res-list" id="res-symptoms"><li>No issues detected.</li></ul>
+              </div>
+              <div class="res-blk">
+                <h5>Treatment</h5>
+                <ul class="res-list" id="res-treatment"><li>Maintain regular watering.</li></ul>
+              </div>
+              <div class="res-blk">
+                <h5>Prevention</h5>
+                <ul class="res-list" id="res-prevention"><li>Monitor growth weekly.</li></ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- HISTORY VIEW -->
+      <section id="history" class="view">
+        <h1>History</h1>
+        <p class="h-sub">Your previous diagnoses and recorded plant health reports.</p>
+        
+        <div class="card history-card" id="history-list">
+          <!-- Item rows injected by JS -->
+        </div>
+      </section>
+
+      <!-- ANALYTICS VIEW -->
+      <section id="analytics" class="view">
+        <h1>Analytics</h1>
+        <p class="h-sub">Detailed breakdown and health trends of your scans.</p>
+        
+        <div class="kpi-grid">
+          <div class="kpi">
+            <div class="kpi-l">Healthy Ratio</div>
+            <div class="kpi-v" id="ana-ratio">0%</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-l">Common Disease</div>
+            <div class="kpi-v" id="ana-common">—</div>
+          </div>
+        </div>
+
+        <div class="analytics-top">
+          <div class="card">
+            <div class="card-title">Health Ratio</div>
+            <div class="donut-wrap">
+              <svg class="donut-svg" viewBox="0 0 42 42">
+                <circle class="donut-ring" cx="21" cy="21" r="15.915"></circle>
+                <circle class="donut-fill" cx="21" cy="21" r="15.915" id="ana-donut-fill" stroke-dashoffset="100"></circle>
+              </svg>
+              <div class="legend">
+                <div class="leg-item"><div class="dot-s" style="background: var(--fg);"></div> Healthy</div>
+                <div class="leg-item"><div class="dot-s" style="background: var(--sand);"></div> Diseased</div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Disease Breakdown</div>
+            <div class="bar-chart" id="ana-breakdown">
+              <!-- Bars injected by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<!-- Chat Widget -->
+<div class="chat-widget collapsed" id="chat-widget">
+  <div class="chat-hdr" onclick="toggleChat()">
+    <h4><span class="online-dot"></span> Plant Assistant</h4>
+    <span style="font-size: 10px; opacity: 0.5;">▼</span>
+  </div>
+  <div class="chat-body" id="chat-msgs">
+    <div class="msg msg-bot">Hello! How can I help you with your plants today?</div>
+  </div>
+  <div class="chat-pills">
+    <button class="pill" onclick="chatQuick('How to prevent blight?')">Prevention</button>
+    <button class="pill" onclick="chatQuick('Organic remedies')">Organic</button>
+    <button class="pill" onclick="chatQuick('Is chemical safe?')">Chemicals</button>
+  </div>
+  <div class="chat-input-bar">
+    <input type="text" id="chat-inp" placeholder="Ask a question...">
+    <button class="btn-send" id="chat-send">↗</button>
+  </div>
+</div>
+
+<script>
+  // State
+  let currentSelection = null;
+  const views = ['dashboard', 'detect', 'history', 'analytics'];
+
+  // Navigation
+  function switchView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+    
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.view === viewId);
+    });
+
+    if (viewId === 'dashboard') loadDashboard();
+    if (viewId === 'history') loadHistory();
+    if (viewId === 'analytics') loadAnalytics();
+  }
+
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchView(btn.dataset.view));
+  });
+
+  // Utils
+  const fmtDate = (d) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  // Dashboard Loader
+  async function loadDashboard() {
+    try {
+      const res = await fetch('/api/analytics');
+      const data = await res.json();
+      
+      document.getElementById('stat-total').textContent = data.total || 0;
+      document.getElementById('stat-healthy').textContent = data.healthy || 0;
+      document.getElementById('stat-diseased').textContent = data.diseased || 0;
+      document.getElementById('stat-conf').textContent = (data.avg_confidence || 0) + '%';
+      
+      const resHist = await fetch('/api/history');
+      const histData = await resHist.json();
+      const list = document.getElementById('dashboard-recent');
+      list.innerHTML = '';
+      
+      histData.slice(0, 4).forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'recent-item';
+        const thumbUrl = item.filename ? `/uploads/${item.filename}` : '';
+        div.innerHTML = `
+          <img src="${thumbUrl}" class="recent-thumb" onerror="this.style.background='#e8e4db'">
+          <div class="recent-info">
+            <div class="recent-name">${item.disease}</div>
+            <div class="recent-date">${fmtDate(item.timestamp)}</div>
+          </div>
+          <div class="status-pill status-${item.status}">${item.status}</div>
+        `;
+        list.appendChild(div);
+      });
+    } catch (e) { console.error(e); }
+  }
+
+  // History Loader
+  async function loadHistory() {
+    try {
+      const res = await fetch('/api/history');
+      const data = await res.json();
+      const list = document.getElementById('history-list');
+      list.innerHTML = '';
+      
+      if (!data.length) {
+        list.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--muted);">No records found.</div>';
+        return;
+      }
+
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'h-row';
+        const thumbUrl = item.filename ? `/uploads/${item.filename}` : '';
+        div.innerHTML = `
+          <img src="${thumbUrl}" class="recent-thumb" onerror="this.style.background='#e8e4db'">
+          <div class="h-info">
+            <div class="recent-name">${item.disease}</div>
+            <div class="recent-date">${fmtDate(item.timestamp)}</div>
+          </div>
+          <div class="h-stats">
+            <div class="status-pill status-${item.status}">${item.status}</div>
+            <div class="c-bar-wrap">
+              <div style="font-size: 10px; font-weight: 700; color: var(--muted);">${item.confidence}% Confidence</div>
+              <div class="c-bar-bg"><div class="c-bar-fill" style="width: ${item.confidence}%"></div></div>
+            </div>
+            <button class="h-del" onclick="deleteRecord(${item.id})">✕</button>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    } catch (e) { console.error(e); }
+  }
+
+  async function deleteRecord(id) {
+    if (!confirm('Are you sure you want to delete this record?')) return;
+    await fetch(`/api/history/${id}`, { method: 'DELETE' });
+    loadHistory();
+  }
+
+  // Analytics Loader
+  async function loadAnalytics() {
+    try {
+      const res = await fetch('/api/analytics');
+      const data = await res.json();
+      
+      const ratio = data.total ? Math.round((data.healthy / data.total) * 100) : 0;
+      document.getElementById('ana-ratio').textContent = ratio + '%';
+      
+      // Donut
+      const offset = 100 - ratio;
+      document.getElementById('ana-donut-fill').style.strokeDashoffset = offset;
+
+      // Common disease
+      const diseases = Object.entries(data.disease_counts || {});
+      const top = diseases.length ? diseases.sort((a,b) => b[1] - a[1])[0] : null;
+      document.getElementById('ana-common').textContent = top ? top[0] : 'None';
+
+      // Breakdown bars
+      const bars = document.getElementById('ana-breakdown');
+      bars.innerHTML = '';
+      if (!diseases.length) {
+        bars.innerHTML = '<div style="font-size: 13px; color: var(--muted);">No data to display.</div>';
+      }
+      diseases.forEach(([name, count]) => {
+        const pct = Math.round((count / data.total) * 100);
+        const item = document.createElement('div');
+        item.className = 'bar-item';
+        item.innerHTML = `
+          <div class="bar-label">${name}</div>
+          <div class="bar-track"><div class="bar-fill" style="width: ${pct}%"></div></div>
+          <div class="bar-val">${count}</div>
+        `;
+        bars.appendChild(item);
+      });
+    } catch (e) { console.error(e); }
+  }
+
+  // Detect Logic
+  const fileInput = document.getElementById('file-input');
+  const dropZone = document.getElementById('drop-zone');
+  const preview = document.getElementById('file-preview');
+  const analyseBtn = document.getElementById('btn-analyse');
+
+  fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+  dropZone.addEventListener('click', () => fileInput.click());
+  
+  function handleFile(file) {
+    if (!file) return;
+    currentSelection = file;
+    document.getElementById('preview-img').src = URL.createObjectURL(file);
+    document.getElementById('preview-name').textContent = file.name;
+    document.getElementById('preview-size').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
+    preview.style.display = 'flex';
+    document.getElementById('result-view').style.display = 'none';
+  }
+
+  analyseBtn.addEventListener('click', async () => {
+    if (!currentSelection) return;
+    
+    document.getElementById('global-spinner').style.display = 'flex';
+    const form = new FormData();
+    form.append('image', currentSelection);
+    
+    try {
+      const res = await fetch('/api/predict', { method: 'POST', body: form });
+      const data = await res.json();
+      
+      if (!res.ok) throw new Error(data.error || 'Server error');
+      
+      showResult(data);
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      document.getElementById('global-spinner').style.display = 'none';
+    }
+  });
+
+  function showResult(data) {
+    const res = document.getElementById('result-view');
+    res.style.display = 'block';
+    
+    const pill = document.getElementById('res-status-pill');
+    pill.className = `status-pill status-${data.status}`;
+    pill.textContent = data.status;
+    
+    const health = data.status === 'healthy' ? data.confidence : Math.max(5, 100 - data.confidence);
+    const healthBar = document.getElementById('res-health-bar');
+    const healthVal = document.getElementById('res-health-val');
+    
+    document.getElementById('res-disease-name').textContent = data.disease;
+    healthVal.textContent = Math.round(health) + '%';
+    healthBar.style.width = health + '%';
+    
+    // Color logic
+    if (health > 75) {
+      healthBar.style.background = 'var(--fg)';
+      healthVal.style.color = 'var(--fg)';
+    } else if (health > 40) {
+      healthBar.style.background = '#d97706'; // Amber
+      healthVal.style.color = '#d97706';
+    } else {
+      healthBar.style.background = 'var(--red-warm)';
+      healthVal.style.color = 'var(--red-warm)';
+    }
+
+    document.getElementById('res-summary').textContent = data.result_summary || `Analysis suggests the presence of ${data.disease}. Recommended actions provided below.`;
+    
+    const fill = (id, items) => {
+      const ul = document.getElementById(id);
+      ul.innerHTML = items?.length ? items.map(i => `<li>${i}</li>`).join('') : '<li>No data available</li>';
+    };
+    
+    fill('res-symptoms', data.symptoms);
+    fill('res-treatment', data.treatment);
+    fill('res-prevention', data.prevention);
+    
+    res.scrollIntoView({ behavior: 'smooth' });
+    currentChatDisease = data.disease;
+  }
+
+  // Chat Logic
+  let currentChatDisease = 'Unknown';
+  function toggleChat() { document.getElementById('chat-widget').classList.toggle('collapsed'); }
+  
+  function chatQuick(txt) {
+    document.getElementById('chat-inp').value = txt;
+    sendChat();
+  }
+
+  async function sendChat() {
+    const inp = document.getElementById('chat-inp');
+    const txt = inp.value.trim();
+    if (!txt) return;
+    
+    addMsg(txt, 'user');
+    inp.value = '';
+    
+    try {
+      const res = await fetch('/api/chat', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: txt, disease: currentChatDisease })
+      });
+      const data = await res.json();
+      addMsg(data.response, 'bot');
+    } catch (e) { addMsg('Error connecting to assistant.', 'bot'); }
+  }
+
+  function addMsg(txt, role) {
+    const msgs = document.getElementById('chat-msgs');
+    const div = document.createElement('div');
+    div.className = `msg msg-${role}`;
+    div.textContent = txt;
+    msgs.appendChild(div);
+    msgs.scrollTop = msgs.scrollHeight;
+  }
+
+  document.getElementById('chat-send').addEventListener('click', sendChat);
+  document.getElementById('chat-inp').addEventListener('keypress', e => { if (e.key === 'Enter') sendChat(); });
+
+  // Init
+  window.onload = () => {
+    // Basic user info
+    const userName = "{{ current_user.name }}";
+    document.getElementById('user-nm').textContent = userName;
+    document.getElementById('user-av').textContent = userName[0].toUpperCase();
+    
+    // Simple routing
+    const path = window.location.pathname;
+    let initialView = 'dashboard';
+    if (path.includes('history')) initialView = 'history';
+    else if (path.includes('detect')) initialView = 'detect';
+    else if (path.includes('analytics')) initialView = 'analytics';
+    
+    switchView(initialView);
+  };
+</script>
+
+</body>
+</html>

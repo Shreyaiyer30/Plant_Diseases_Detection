@@ -1,52 +1,430 @@
 {
   "Healthy": {
-    "description": "The plant looks healthy. No disease detected.",
-    "treatment": "Maintain regular watering, ensure proper sunlight, and continue balanced fertilization.",
-    "prevention": "Monitor regularly, keep soil well-drained, and avoid overhead watering."
+    "symptoms": [
+      "Uniform deep green colouring across the leaf",
+      "No spots, lesions, or discolouration",
+      "Firm, turgid leaf texture with no wilting",
+      "Normal leaf size and shape for the crop type"
+    ],
+    "treatment": [
+      "Maintain regular, consistent watering schedule",
+      "Ensure adequate sunlight exposure (6-8 hours for most crops)",
+      "Continue balanced NPK fertilization as per crop calendar",
+      "Monitor weekly for early signs of pest or disease"
+    ],
+    "prevention": [
+      "Inspect new plants before introducing them to the field",
+      "Keep soil well-drained to prevent root stress",
+      "Remove weeds that can harbour pests or pathogens",
+      "Maintain proper plant spacing for airflow"
+    ],
+    "organic_remedies": [
+      "None needed — plant is currently healthy",
+      "Apply compost or vermicompost to maintain soil health"
+    ],
+    "chemical_remedies": [
+      "None needed at this stage",
+      "If soil test shows deficiency, apply appropriate micronutrient supplement"
+    ]
   },
   "Tomato - Early Blight": {
-    "description": "Caused by Alternaria solani. Dark concentric rings on older leaves.",
-    "treatment": "Apply Mancozeb or copper fungicide, remove infected leaves, and use Chlorothalonil spray.",
-    "prevention": "Crop rotation every 2-3 years, avoid wetting foliage, and use disease-free seeds."
+    "symptoms": [
+      "Dark brown concentric ring spots (target-board pattern) on older lower leaves",
+      "Yellow (chlorotic) halo surrounding each lesion",
+      "Lesions first appear on the oldest, lowest leaves and progress upward",
+      "Severe cases cause early defoliation and reduced fruit yield"
+    ],
+    "treatment": [
+      "Apply Mancozeb (2 g/L) or Chlorothalonil fungicide spray every 7-10 days",
+      "Remove and destroy all visibly infected leaves immediately",
+      "Apply copper-based fungicide as a protective spray",
+      "Avoid overhead irrigation — water at the base of the plant",
+      "Improve canopy airflow by staking or pruning lower leaves"
+    ],
+    "prevention": [
+      "Rotate tomato crops with non-solanaceous crops every 2-3 years",
+      "Use certified disease-free transplants or seeds",
+      "Maintain adequate nitrogen — over-fertilisation increases susceptibility",
+      "Mulch soil to reduce splash-dispersal of fungal spores",
+      "Water in the morning so foliage dries quickly"
+    ],
+    "organic_remedies": [
+      "Neem oil spray (5 ml per litre of water) every 5-7 days",
+      "Copper oxychloride (OMRI-listed) as a protective spray",
+      "Baking soda solution (1 tbsp per litre) to raise leaf pH",
+      "Remove heavily infected leaves and compost away from the field"
+    ],
+    "chemical_remedies": [
+      "Mancozeb 75 WP @ 2 g/L water",
+      "Chlorothalonil 75 WP @ 2 g/L water",
+      "Azoxystrobin 23 SC @ 1 ml/L water (systemic, excellent control)",
+      "Iprodione 50 WP @ 2 g/L water"
+    ]
   },
   "Tomato - Late Blight": {
-    "description": "Caused by Phytophthora infestans. Spreads rapidly in cool, moist conditions.",
-    "treatment": "Apply Metalaxyl or Cymoxanil immediately, remove all infected plants, and improve air circulation.",
-    "prevention": "Plant resistant varieties, avoid overhead irrigation, and apply preventive copper fungicide."
+    "symptoms": [
+      "Large, irregular, water-soaked (greasy-looking) brown lesions on leaves",
+      "White sporulation (cottony mould) on the underside of leaves in humid conditions",
+      "Brown-to-black stem lesions with a greasy appearance",
+      "Rapid plant collapse — entire plant can die within a week",
+      "Brown rot on fruit surface, often with white mould"
+    ],
+    "treatment": [
+      "Apply Metalaxyl + Mancozeb (Ridomil Gold MZ) at first sign — 2.5 g/L",
+      "Apply Cymoxanil + Mancozeb as an alternative systemic option",
+      "Remove and destroy ALL infected plant parts — do not compost them",
+      "Spray copper hydroxide (2 g/L) as a protectant on healthy plants nearby",
+      "Improve field drainage to reduce humidity around plants"
+    ],
+    "prevention": [
+      "Plant resistant varieties (e.g., Sanchi, Abhinav, Vaibhav for Indian conditions)",
+      "Avoid overhead irrigation; use drip irrigation at the base",
+      "Apply preventive copper fungicide before rainy or humid spells",
+      "Plant on raised beds with good drainage",
+      "Destroy all crop debris after harvest"
+    ],
+    "organic_remedies": [
+      "Copper spray (OMRI-listed Bordeaux mixture or copper hydroxide)",
+      "Bacillus subtilis biocontrol spray (Serenade / Bactivam)",
+      "Remove infected plants completely and burn them away from the field"
+    ],
+    "chemical_remedies": [
+      "Metalaxyl 8% + Mancozeb 64% WP (Ridomil Gold MZ) @ 2.5 g/L",
+      "Cymoxanil 8% + Mancozeb 64% WP @ 2.5 g/L",
+      "Fenamidone 10% + Mancozeb 50% WG @ 3 g/L",
+      "Dimethomorph + Mancozeb as a preventive spray"
+    ]
   },
   "Tomato - Leaf Curl Virus": {
-    "description": "Tomato Leaf Curl Virus spread by whiteflies. Causes severe leaf curling.",
-    "treatment": "Control whiteflies with Imidacloprid, remove and destroy infected plants, and apply Thiamethoxam.",
-    "prevention": "Use reflective mulches, grow resistant varieties, and inspect transplants before planting."
+    "symptoms": [
+      "Upward or downward curling and cupping of leaves",
+      "Yellowing (chlorosis) of leaf margins and veins",
+      "Severely stunted, bushy plant growth",
+      "Small, distorted fruit or failure to set fruit",
+      "Tiny white insects (whiteflies) visible on leaf undersides"
+    ],
+    "treatment": [
+      "Control whitefly vectors using Imidacloprid 17.8 SL @ 0.3 ml/L",
+      "Apply Thiamethoxam 25 WG @ 0.3 g/L as an alternative systemic insecticide",
+      "Remove and destroy all heavily infected plants to prevent virus spread",
+      "Apply reflective silver mulch to repel whiteflies",
+      "Use yellow sticky traps (10-15 per acre) to monitor and reduce whitefly population"
+    ],
+    "prevention": [
+      "Use certified virus-free transplants from reputable nurseries",
+      "Grow resistant/tolerant varieties (TH-01, Arka Rakshak, Osiris)",
+      "Install insect-proof netting (40-50 mesh) on seedling nurseries",
+      "Inspect transplants carefully for whiteflies before planting",
+      "Remove and destroy weed hosts nearby that harbour whiteflies"
+    ],
+    "organic_remedies": [
+      "Neem oil spray (5 ml/L) to repel whiteflies",
+      "Yellow sticky traps to reduce adult whitefly population",
+      "Remove infected plants early to limit virus spread",
+      "Use reflective silver/aluminium mulch between rows"
+    ],
+    "chemical_remedies": [
+      "Imidacloprid 17.8 SL @ 0.3 ml/L (soil drench or foliar spray)",
+      "Thiamethoxam 25 WG @ 0.3 g/L",
+      "Acetamiprid 20 SP @ 0.3 g/L",
+      "Spiromesifen 22.9 SC @ 0.8 ml/L (also controls mites)"
+    ]
   },
   "Potato - Early Blight": {
-    "description": "Caused by Alternaria solani. Target-board-like spots on leaves.",
-    "treatment": "Apply Mancozeb or Azoxystrobin, remove infected debris, and balance nitrogen fertilization.",
-    "prevention": "Use certified seed potatoes, crop rotation, and maintain adequate plant spacing."
+    "symptoms": [
+      "Dark brown, circular to angular spots with concentric rings (target-board pattern)",
+      "Yellow halo surrounding lesions on older leaves",
+      "Lesions begin on the lowest, oldest leaves first",
+      "Severe cases cause premature defoliation and reduced tuber size"
+    ],
+    "treatment": [
+      "Apply Mancozeb 75 WP (2 g/L) or Azoxystrobin 23 SC (1 ml/L)",
+      "Remove and destroy badly infected leaves",
+      "Balance nitrogen fertilisation — both excess and deficiency increase susceptibility",
+      "Spray at 7-10 day intervals during humid/warm weather",
+      "Irrigate in the morning so leaves dry before nightfall"
+    ],
+    "prevention": [
+      "Use certified, disease-free seed potatoes",
+      "Rotate crops with cereals or legumes for 2-3 years",
+      "Maintain adequate plant spacing (30-35 cm) for airflow",
+      "Avoid excessive nitrogen that creates lush, susceptible foliage",
+      "Destroy all crop residues after harvest"
+    ],
+    "organic_remedies": [
+      "Copper oxychloride spray (3 g/L) as a preventive coating",
+      "Neem oil (5 ml/L) every 7 days in wet conditions",
+      "Baking soda solution (1 tbsp/L) as a mild anti-fungal"
+    ],
+    "chemical_remedies": [
+      "Mancozeb 75 WP @ 2 g/L water",
+      "Azoxystrobin 23 SC @ 1 ml/L water",
+      "Difenoconazole 25 EC @ 0.5 ml/L water",
+      "Iprodione 50 WP @ 2 g/L water"
+    ]
   },
   "Potato - Late Blight": {
-    "description": "Caused by Phytophthora infestans. One of the most destructive potato diseases.",
-    "treatment": "Apply Metalaxyl + Mancozeb immediately, destroy infected haulm, and harvest promptly in dry conditions.",
-    "prevention": "Plant resistant varieties (Kufri Jyoti), apply preventive fungicide, and avoid irrigation in cloudy weather."
+    "symptoms": [
+      "Large, dark water-soaked patches on leaves, often with a pale green border",
+      "White fluffy sporulation on the underside of infected leaf patches",
+      "Dark brown to black stem lesions",
+      "Brown rot spreading through tubers causing a reddish-brown internal decay",
+      "Extremely rapid spread in cool (10-20°C), wet conditions"
+    ],
+    "treatment": [
+      "Apply Metalaxyl + Mancozeb (Ridomil Gold) @ 2.5 g/L immediately on first sign",
+      "Destroy infected haulm (tops) before harvest to prevent tuber infection",
+      "Harvest tubers promptly in dry weather to prevent tuber rot",
+      "Do not store infected tubers — cull and destroy them",
+      "Apply copper hydroxide as a protective spray on uninfected plants"
+    ],
+    "prevention": [
+      "Plant resistant varieties (Kufri Jyoti, Kufri Girdhari, Sarpo Mira)",
+      "Plant certified, disease-free seed tubers",
+      "Apply preventive fungicide spray before humid or rainy forecasts",
+      "Avoid overhead irrigation — use drip or furrow irrigation",
+      "Destroy volunteers (self-seeded plants) that can harbour disease"
+    ],
+    "organic_remedies": [
+      "Bordeaux mixture (copper sulphate + lime, 1%) as a preventive spray",
+      "Copper hydroxide (OMRI-listed) @ 3 g/L",
+      "Destroy and burn infected plant material — never compost"
+    ],
+    "chemical_remedies": [
+      "Metalaxyl 8% + Mancozeb 64% WP @ 2.5 g/L (Ridomil Gold MZ)",
+      "Fenamidone 10% + Mancozeb 50% WG @ 3 g/L",
+      "Propamocarb + Fosetyl-Al (Previcur Energy) @ 2 ml/L",
+      "Cymoxanil 8% + Mancozeb 64% WP @ 2.5 g/L"
+    ]
   },
   "Grape - Black Rot": {
-    "description": "Caused by Guignardia bidwellii. Affects leaves and fruit.",
-    "treatment": "Apply Myclobutanil or Mancozeb, remove mummified fruit, and prune infected canes.",
-    "prevention": "Maintain open vine canopy, apply fungicide from bud break, and remove crop debris after harvest."
+    "symptoms": [
+      "Tan or light brown circular lesions with distinct dark brown to black margins on leaves",
+      "Small, black, flask-shaped pycnidia (fungal fruiting bodies) visible in lesions",
+      "Infected berries turn brown, then shrivel and mummify into hard, black 'raisins'",
+      "Infected shoots and tendrils develop black, elliptical cankers"
+    ],
+    "treatment": [
+      "Apply Myclobutanil (Nova) @ 1 ml/L or Mancozeb @ 2 g/L every 7-14 days",
+      "Remove all mummified fruit from the vine and the ground — they are primary inoculum",
+      "Prune infected canes and shoots during dormancy",
+      "Ensure good canopy management for airflow and rapid drying"
+    ],
+    "prevention": [
+      "Maintain an open vine canopy through proper pruning and training",
+      "Apply fungicide protectively from bud break through fruit set",
+      "Remove ALL crop debris, mummified berries, and diseased canes after harvest",
+      "Avoid planting in low-lying, poorly drained, humid sites"
+    ],
+    "organic_remedies": [
+      "Remove mummified fruit and infected leaves regularly",
+      "Sulfur-based spray (OMRI-listed) applied preventively",
+      "Improve canopy airflow through trellis management"
+    ],
+    "chemical_remedies": [
+      "Myclobutanil 10 WP @ 1 g/L water",
+      "Mancozeb 75 WP @ 2 g/L water",
+      "Tebuconazole 25.9 EC @ 0.5 ml/L water",
+      "Azoxystrobin + Difenoconazole (Amistar Top) @ 0.75 ml/L"
+    ]
   },
   "Grape - Leaf Blight": {
-    "description": "Caused by Isariopsis clavispora. Irregular dark spots on grape leaves.",
-    "treatment": "Apply copper-based or Zineb fungicide, remove infected leaves, and improve canopy management.",
-    "prevention": "Good vine spacing and pruning, avoid wetting foliage, and apply preventive fungicide spray."
+    "symptoms": [
+      "Irregular, dark brown spots with a reddish margin on grape leaves",
+      "Spots enlarge and coalesce causing large necrotic areas",
+      "Premature yellowing and leaf drop reducing photosynthesis",
+      "Reduced fruit size and quality due to early defoliation"
+    ],
+    "treatment": [
+      "Apply copper-based fungicide (3 g/L) every 10-14 days",
+      "Spray Zineb 75 WP (2 g/L) or Captan 50 WP (2 g/L)",
+      "Remove badly infected leaves and dispose of them away from the vineyard",
+      "Improve canopy management to reduce humidity within the canopy"
+    ],
+    "prevention": [
+      "Train vines to maintain an open, airy canopy",
+      "Apply protective fungicide from early spring growth stages",
+      "Avoid excessive nitrogen fertilisation that encourages dense foliage",
+      "Remove all leaf litter after harvest"
+    ],
+    "organic_remedies": [
+      "Copper hydroxide or Bordeaux mixture as preventive spray",
+      "Remove infected leaves promptly to reduce spore load",
+      "Sulfur dust in dry conditions"
+    ],
+    "chemical_remedies": [
+      "Copper oxychloride 50 WP @ 3 g/L",
+      "Zineb 75 WP @ 2 g/L",
+      "Captan 50 WP @ 2 g/L",
+      "Tebuconazole 25.9 EC @ 0.5 ml/L"
+    ]
   },
   "Powdery Mildew": {
-    "description": "Fungal disease causing white powdery coating on leaf surfaces.",
-    "treatment": "Apply Sulphur-based fungicide, spray Neem oil (5ml/L), and remove heavily infected parts.",
-    "prevention": "Ensure good air circulation, avoid excess nitrogen fertilizer, and water at base not overhead."
+    "symptoms": [
+      "White to greyish powdery fungal coating on upper and sometimes lower leaf surfaces",
+      "Leaf distortion, curling, and stunting in young tissues",
+      "Yellowing of affected leaves leading to premature drop",
+      "Infected flowers and fruit may fail to develop properly",
+      "In severe cases, entire leaflets may turn brown and die"
+    ],
+    "treatment": [
+      "Apply sulphur-based fungicide (Thiovit Jet / Kumulus) @ 2 g/L every 7 days",
+      "Spray neem oil (5 ml/L) in the early morning or evening",
+      "Remove and discard heavily infected leaves and shoots",
+      "Spray wettable sulphur alternated with potassium bicarbonate for resistance management"
+    ],
+    "prevention": [
+      "Maintain at least 30-45 cm spacing between plants for airflow",
+      "Water at the base of the plant — avoid wetting foliage",
+      "Avoid excess nitrogen fertiliser that stimulates lush, susceptible new growth",
+      "Plant resistant varieties where available (e.g., resistant cucurbits, grapes)",
+      "Inspect regularly in warm, dry weather — powdery mildew thrives without rain"
+    ],
+    "organic_remedies": [
+      "Neem oil spray (5 ml/L of water) every 5-7 days",
+      "Potassium bicarbonate spray (1 tbsp/L) — raises pH and kills spores",
+      "Baking soda solution (1 tbsp per litre) as a budget alternative",
+      "Milk spray (1 part milk : 10 parts water) — shown to be effective in trials",
+      "Garlic extract spray as a natural anti-fungal"
+    ],
+    "chemical_remedies": [
+      "Wettable Sulphur 80 WP @ 2 g/L water",
+      "Myclobutanil 10 WP @ 1 g/L water (systemic)",
+      "Propiconazole 25 EC @ 0.5 ml/L water (systemic)",
+      "Tebuconazole 25.9 EC @ 0.5 ml/L water",
+      "Hexaconazole 5 SC @ 1 ml/L water"
+    ]
+  },
+  "Rust": {
+    "symptoms": [
+      "Orange, yellow, or reddish-brown powdery pustules on leaf undersides",
+      "Corresponding yellow spots or chlorosis on the upper leaf surface",
+      "Premature yellowing and leaf drop",
+      "Powdery, rust-coloured spores released when pustules are rubbed",
+      "In cedar apple rust: bright orange gelatinous finger-like projections from galls"
+    ],
+    "treatment": [
+      "Apply copper or sulphur-based fungicide immediately upon first sign",
+      "Spray Mancozeb 75 WP (2 g/L) or Tebuconazole 25.9 EC (0.5 ml/L)",
+      "Remove and destroy all heavily infected leaves",
+      "Avoid overhead watering — moisture spreads spores"
+    ],
+    "prevention": [
+      "Plant rust-resistant varieties where available",
+      "Ensure good plant spacing and airflow through the canopy",
+      "Apply protective fungicide at the start of the rainy season",
+      "Clean up and remove garden debris, fallen leaves, and plant residues after harvest",
+      "For cedar apple rust: avoid planting apple trees near junipers or cedars"
+    ],
+    "organic_remedies": [
+      "Copper-based spray (Bordeaux mixture or copper hydroxide) every 10-14 days",
+      "Sulfur dust applied in dry conditions",
+      "Remove and burn heavily infected leaves"
+    ],
+    "chemical_remedies": [
+      "Mancozeb 75 WP @ 2 g/L water",
+      "Tebuconazole 25.9 EC @ 0.5 ml/L water",
+      "Propiconazole 25 EC @ 0.5 ml/L water",
+      "Myclobutanil 10 WP @ 1 g/L water (for cedar apple rust)"
+    ]
+  },
+  "Apple Scab": {
+    "symptoms": [
+      "Olive-green to dark brown velvety spots on upper leaf surfaces",
+      "Corresponding lighter spots on leaf undersides in early stages",
+      "Yellowing and premature leaf drop, weakening the tree",
+      "Scabby, cracked, corky lesions on fruit surface reducing marketability",
+      "Severe cases lead to nearly complete defoliation by midsummer"
+    ],
+    "treatment": [
+      "Apply Myclobutanil (Nova) @ 1 g/L or Captan 50 WP @ 2 g/L from early green tip stage",
+      "Remove and rake up fallen scabby leaves — they are the primary source of spores",
+      "Prune the canopy to improve airflow and light penetration",
+      "Spray at 7-10 day intervals during rain-splash periods (spring)"
+    ],
+    "prevention": [
+      "Plant scab-resistant apple varieties (Enterprise, Freedom, Liberty, Pristine)",
+      "Clear all fallen leaves and fruit from the orchard every autumn",
+      "Apply dormant copper spray before bud break to reduce overwintering spores",
+      "Avoid overhead irrigation that keeps leaves wet",
+      "Thin fruit to avoid contact between apples"
+    ],
+    "organic_remedies": [
+      "Copper hydroxide spray (2-3 g/L) from green tip through petal fall",
+      "Remove and compost (away from orchard) all fallen leaves and fruit",
+      "Sulfur-based spray in dry conditions during the season"
+    ],
+    "chemical_remedies": [
+      "Captan 50 WP @ 2 g/L water (protectant)",
+      "Myclobutanil 10 WP @ 1 g/L water (systemic, curative)",
+      "Mancozeb 75 WP @ 2 g/L water (protectant)",
+      "Difenoconazole 25 EC @ 0.5 ml/L water (systemic)"
+    ]
+  },
+  "Northern Leaf Blight": {
+    "symptoms": [
+      "Long, elliptical (cigar-shaped) grey-green to tan lesions, typically 2.5-15 cm long",
+      "Lesions may have a water-soaked appearance initially before turning tan",
+      "Lesions typically begin on lower leaves and progress upward",
+      "Severely blighted plants look scorched with large dried-out leaf areas",
+      "Black sooty spores visible on lesions in humid conditions"
+    ],
+    "treatment": [
+      "Apply Azoxystrobin 23 SC (1 ml/L) or Propiconazole 25 EC (0.5 ml/L) at first sign",
+      "Spray Pyraclostrobin + Metconazole (Headline AMP) for broad-spectrum control",
+      "Apply fungicide at the V8-tasseling stage for best protection",
+      "Ensure good canopy airflow by appropriate plant spacing"
+    ],
+    "prevention": [
+      "Use resistant corn hybrid varieties (check hybrid ratings for NLB)",
+      "Practice conventional tillage to bury and decompose infected debris",
+      "Rotate corn with soybean, cotton, or other non-grass crops",
+      "Manage irrigation to avoid prolonged leaf wetness periods",
+      "Apply a preventive fungicide spray if disease pressure is historically high"
+    ],
+    "organic_remedies": [
+      "Crop rotation with non-host plants (soybeans, legumes)",
+      "Tillage to bury crop debris and reduce spore overwintering",
+      "Use disease-resistant hybrid seeds"
+    ],
+    "chemical_remedies": [
+      "Azoxystrobin 23 SC @ 1 ml/L water",
+      "Propiconazole 25 EC @ 0.5 ml/L water",
+      "Pyraclostrobin 20 WG @ 0.5 g/L water",
+      "Tebuconazole 25.9 EC @ 0.5 ml/L water"
+    ]
   },
   "Bacterial Leaf Spot": {
-    "description": "Caused by Xanthomonas species. Water-soaked angular lesions.",
-    "treatment": "Apply copper hydroxide spray, remove infected debris immediately, and avoid working in wet crop.",
-    "prevention": "Use disease-free certified seeds, avoid overhead irrigation, and maintain proper plant spacing."
+    "symptoms": [
+      "Small, water-soaked (greasy) angular spots bounded by leaf veins initially",
+      "Spots turn dark brown to black with a yellow (chlorotic) halo as they age",
+      "Lesions on leaves may coalesce causing large necrotic patches (blight)",
+      "Defoliation in severe cases, reducing yield and fruit quality",
+      "On pepper: fruit also develops raised, scabby, corky lesions"
+    ],
+    "treatment": [
+      "Apply copper hydroxide spray (2-3 g/L) at first sign of disease",
+      "Remove and destroy all infected leaves and debris immediately",
+      "Avoid working in the crop when leaves are wet — hands and tools spread bacteria",
+      "Apply bactericide-copper sprays every 7-10 days in wet conditions"
+    ],
+    "prevention": [
+      "Use certified disease-free seeds and resistant varieties",
+      "Avoid overhead irrigation — drip irrigation greatly reduces spread",
+      "Maintain proper plant spacing (30-45 cm) for airflow",
+      "Sanitise tools with 10% bleach solution between plants",
+      "Practice 2-3 year crop rotation with non-host crops"
+    ],
+    "organic_remedies": [
+      "Copper-based sprays (Bordeaux mixture or copper hydroxide)",
+      "Remove infected plant material promptly and destroy it",
+      "Use disease-free certified seeds from a reliable supplier"
+    ],
+    "chemical_remedies": [
+      "Copper hydroxide 77 WP @ 2-3 g/L water",
+      "Copper oxychloride 50 WP @ 3 g/L water",
+      "Streptomycin sulphate + Copper oxychloride mix (check label)",
+      "Kasugamycin 3 SL @ 1 ml/L water"
+    ]
   }
 }
