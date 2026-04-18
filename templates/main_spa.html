@@ -89,29 +89,85 @@
     .nav-btn.active .nav-dot { background: var(--wh); }
     
     .sb-user {
-      padding: 20px;
-      border-top: 1px solid rgba(255,255,255,0.1);
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255,255,255,0.05);
       display: flex;
       align-items: center;
       gap: 12px;
     }
     .user-av {
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       background: rgba(255,255,255,0.1);
       color: var(--wh);
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 700;
     }
     .user-info { flex: 1; overflow: hidden; }
-    .user-nm { font-size: 12px; font-weight: 700; color: var(--wh); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-    .user-rl { font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.05em; }
-    .btn-logout { color: rgba(255,255,255,0.4); text-decoration: none; font-size: 14px; }
-    .btn-logout:hover { color: var(--wh); }
+    .user-nm { font-size: 13px; font-weight: 700; color: var(--wh); white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+    .user-rl { font-size: 10px; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 2px; }
+    .btn-logout { 
+      width: 32px; 
+      height: 32px; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      border-radius: 8px;
+      color: rgba(255,255,255,0.4); 
+      text-decoration: none; 
+      transition: var(--tr);
+    }
+    .btn-logout:hover { color: var(--wh); background: rgba(255,255,255,0.05); }
+
+    .sb-footer {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+    .lang-label {
+      font-size: 9px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: rgba(255,255,255,0.3);
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .lang-select-wrap::after {
+      content: '▾';
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,0.4);
+      pointer-events: none;
+      font-size: 10px;
+    }
+    #language-select {
+      width: 100%;
+      padding: 10px 14px;
+      padding-right: 32px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.05);
+      color: var(--wh);
+      font-size: 13px;
+      cursor: pointer;
+      appearance: none;
+      transition: var(--tr);
+    }
+    #language-select:hover {
+      background: rgba(255,255,255,0.08);
+      border-color: rgba(255,255,255,0.2);
+    }
+    #language-select:focus {
+      outline: none;
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.3);
+    }
 
     /* Main Content */
     .main-wrap { flex: 1; margin-left: 200px; min-height: 100vh; padding: 40px; }
@@ -321,16 +377,16 @@
     </div>
     <nav class="sb-nav">
       <div class="nav-btn active" data-view="dashboard">
-        <div class="nav-dot"></div> Dashboard
+        <div class="nav-dot"></div> <span id="nav-dashboard">Dashboard</span>
       </div>
       <div class="nav-btn" data-view="detect">
-        <div class="nav-dot"></div> Detect Disease
+        <div class="nav-dot"></div> <span id="nav-detect">Detect Disease</span>
       </div>
       <div class="nav-btn" data-view="history">
-        <div class="nav-dot"></div> History
+        <div class="nav-dot"></div> <span id="nav-history">History</span>
       </div>
       <div class="nav-btn" data-view="analytics">
-        <div class="nav-dot"></div> Analytics
+        <div class="nav-dot"></div> <span id="nav-analytics">Analytics</span>
       </div>
     </nav>
     <div class="sb-user">
@@ -339,7 +395,17 @@
         <div class="user-nm" id="user-nm">User Name</div>
         <div class="user-rl">Farmer</div>
       </div>
-      <a href="/logout" class="btn-logout">⏻</a>
+      <a href="/logout" class="btn-logout" title="Logout">⏻</a>
+    </div>
+    <div class="sb-footer">
+      <label class="lang-label">Regional Language</label>
+      <div class="lang-select-wrap">
+        <select id="language-select">
+          <option value="en">English (US)</option>
+          <option value="hi">हिन्दी (Hindi)</option>
+          <option value="mr">मराठी (Marathi)</option>
+        </select>
+      </div>
     </div>
   </aside>
 
@@ -349,38 +415,38 @@
       
       <!-- DASHBOARD VIEW -->
       <section id="dashboard" class="view active">
-        <h1>Dashboard</h1>
-        <p class="h-sub">Welcome back. Here's your plant health overview.</p>
+        <h1 id="dash-h1">Dashboard</h1>
+        <p class="h-sub" id="dash-sub">Welcome back. Here's your plant health overview.</p>
         
         <div class="kpi-grid">
           <div class="kpi">
-            <div class="kpi-l">Total Scans</div>
+            <div class="kpi-l" id="label-total-scans">Total Scans</div>
             <div class="kpi-v" id="stat-total">0</div>
           </div>
           <div class="kpi">
-            <div class="kpi-l">Healthy</div>
+            <div class="kpi-l" id="label-healthy">Healthy</div>
             <div class="kpi-v" id="stat-healthy">0</div>
           </div>
           <div class="kpi">
-            <div class="kpi-l">Diseased</div>
+            <div class="kpi-l" id="label-diseased">Diseased</div>
             <div class="kpi-v" id="stat-diseased">0</div>
           </div>
           <div class="kpi">
-            <div class="kpi-l">Avg Health</div>
+            <div class="kpi-l" id="label-avg-health">Avg Health</div>
             <div class="kpi-v" id="stat-health">0%</div>
           </div>
         </div>
 
         <div class="cta-strip">
           <div class="cta-text">
-            <h3>New Diagnosis</h3>
-            <p>Upload a clear photo of a leaf to identify threats early.</p>
+            <h3 id="cta-h3">New Diagnosis</h3>
+            <p id="cta-p">Upload a clear photo of a leaf to identify threats early.</p>
           </div>
-          <button class="btn-cta" onclick="switchView('detect')">Start Scan</button>
+          <button class="btn-cta" id="btn-start-scan" onclick="switchView('detect')">Start Scan</button>
         </div>
 
         <div class="card">
-          <div class="card-title">
+          <div class="card-title" id="card-recent-title">
             Recent Diagnoses
             <a href="#" class="card-link" onclick="switchView('history')">VIEW ALL →</a>
           </div>
@@ -392,8 +458,8 @@
 
       <!-- DETECT VIEW -->
       <section id="detect" class="view">
-        <h1>Detect Disease</h1>
-        <p class="h-sub">Analyse leaf images in seconds using artificial intelligence.</p>
+        <h1 id="detect-h1">Detect Disease</h1>
+        <p class="h-sub" id="detect-sub">Analyse leaf images in seconds using artificial intelligence.</p>
         
         <div class="card" id="upload-card">
           <div class="upload-box" id="drop-zone" style="cursor: pointer;">
@@ -444,15 +510,15 @@
             </p>
 
             <div class="res-grid">
-              <div class="res-blk">
+              <div class="res-blk" id="res-symptoms-block">
                 <h5>Symptoms</h5>
                 <ul class="res-list" id="res-symptoms"><li>No issues detected.</li></ul>
               </div>
-              <div class="res-blk">
+              <div class="res-blk" id="res-treatment-block">
                 <h5>Treatment</h5>
                 <ul class="res-list" id="res-treatment"><li>Maintain regular watering.</li></ul>
               </div>
-              <div class="res-blk">
+              <div class="res-blk" id="res-prevention-block">
                 <h5>Prevention</h5>
                 <ul class="res-list" id="res-prevention"><li>Monitor growth weekly.</li></ul>
               </div>
@@ -497,8 +563,8 @@
 
       <!-- HISTORY VIEW -->
       <section id="history" class="view">
-        <h1>History</h1>
-        <p class="h-sub">Your previous diagnoses and recorded plant health reports.</p>
+        <h1 id="hist-h1">History</h1>
+        <p class="h-sub" id="hist-sub">Your previous diagnoses and recorded plant health reports.</p>
         
         <div class="card history-card" id="history-list">
           <!-- Item rows injected by JS -->
@@ -507,8 +573,8 @@
 
       <!-- ANALYTICS VIEW -->
       <section id="analytics" class="view">
-        <h1>Analytics</h1>
-        <p class="h-sub">Detailed breakdown and health trends of your scans.</p>
+        <h1 id="ana-h1">Analytics</h1>
+        <p class="h-sub" id="ana-sub">Detailed breakdown and health trends of your scans.</p>
         
         <div class="kpi-grid">
           <div class="kpi">
@@ -523,20 +589,20 @@
 
         <div class="analytics-top">
           <div class="card">
-            <div class="card-title">Health Ratio</div>
+            <div class="card-title" id="card-health-ratio-title">Health Ratio</div>
             <div class="donut-wrap">
               <svg class="donut-svg" viewBox="0 0 42 42">
                 <circle class="donut-ring" cx="21" cy="21" r="15.915"></circle>
                 <circle class="donut-fill" cx="21" cy="21" r="15.915" id="ana-donut-fill" stroke-dashoffset="100"></circle>
               </svg>
               <div class="legend">
-                <div class="leg-item"><div class="dot-s" style="background: var(--fg);"></div> Healthy</div>
-                <div class="leg-item"><div class="dot-s" style="background: var(--sand);"></div> Diseased</div>
+                <div class="leg-item"><div class="dot-s" style="background: var(--fg);"></div> <span id="leg-healthy">Healthy</span></div>
+                <div class="leg-item"><div class="dot-s" style="background: var(--sand);"></div> <span id="leg-diseased">Diseased</span></div>
               </div>
             </div>
           </div>
           <div class="card">
-            <div class="card-title">Disease Breakdown</div>
+            <div class="card-title" id="card-disease-breakdown-title">Disease Breakdown</div>
             <div class="bar-chart" id="ana-breakdown">
               <!-- Bars injected by JS -->
             </div>
@@ -551,16 +617,16 @@
 <!-- Chat Widget -->
 <div class="chat-widget collapsed" id="chat-widget">
   <div class="chat-hdr" onclick="toggleChat()">
-    <h4><span class="online-dot"></span> Plant Assistant</h4>
+    <h4 id="chat-h4"><span class="online-dot"></span> Plant Assistant</h4>
     <span style="font-size: 10px; opacity: 0.5;">▼</span>
   </div>
   <div class="chat-body" id="chat-msgs">
-    <div class="msg msg-bot">Hello! How can I help you with your plants today?</div>
+    <div class="msg msg-bot" id="chat-init-msg">Hello! How can I help you with your plants today?</div>
   </div>
   <div class="chat-pills">
-    <button class="pill" onclick="chatQuick('How to prevent blight?')">Prevention</button>
-    <button class="pill" onclick="chatQuick('Organic remedies')">Organic</button>
-    <button class="pill" onclick="chatQuick('Is chemical safe?')">Chemicals</button>
+    <button class="pill" id="pill-prevention" onclick="chatQuick('How to prevent blight?')">Prevention</button>
+    <button class="pill" id="pill-organic" onclick="chatQuick('Organic remedies')">Organic</button>
+    <button class="pill" id="pill-chemicals" onclick="chatQuick('Is chemical safe?')">Chemicals</button>
   </div>
   <div class="chat-input-bar">
     <input type="text" id="chat-inp" placeholder="Ask a question...">
@@ -571,6 +637,8 @@
 <script>
   // State
   let currentSelection = null;
+  let lastResult = null;
+  let currentLang = {};
   const views = ['dashboard', 'detect', 'history', 'analytics'];
 
   // Navigation
@@ -594,6 +662,98 @@
   // Utils
   const fmtDate = (d) => new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
+  // Language System
+  async function applyLanguage(code) {
+    try {
+      const res = await fetch(`/api/lang/${code}`);
+      const lang = await res.json();
+      currentLang = lang;
+      
+      // Selectors for elements that need translation
+      const elements = {
+        'nav-dashboard': 'dashboard',
+        'nav-detect': 'detect',
+        'nav-history': 'history',
+        'nav-analytics': 'analytics',
+        
+        // Dashboard
+        'dash-h1': 'dash_h1',
+        'dash-sub': 'dash_sub',
+        'label-total-scans': 'label_total_scans',
+        'label-healthy': 'label_healthy',
+        'label-diseased': 'label_diseased',
+        'label-avg-health': 'label_avg_health',
+        'cta-h3': 'cta_h3',
+        'cta-p': 'cta_p',
+        'btn-start-scan': 'btn_start_scan',
+        'card-recent-title': 'card_recent_title',
+        
+        // Detect
+        'detect-h1': 'detect_h1',
+        'detect-sub': 'detect_sub',
+        'btn-camera': 'use_camera',
+        'res-health-label': 'health_status',
+        
+        // History
+        'hist-h1': 'hist_h1',
+        'hist-sub': 'hist_sub',
+        
+        // Analytics
+        'ana-h1': 'ana_h1',
+        'ana-sub': 'ana_sub',
+        'label-total-scans-ana': 'label_total_scans',
+        'label-healthy-ana': 'label_healthy',
+        'label-diseased-ana': 'label_diseased',
+        'label-health-ratio-ana': 'label_healthy_ratio',
+        'label-common-disease-ana': 'label_common_disease',
+        'card-health-ratio-title': 'card_health_ratio',
+        'card-disease-breakdown-title': 'card_disease_breakdown',
+        'leg-healthy': 'legend_healthy',
+        'leg-diseased': 'legend_diseased',
+        
+        // Chatbot
+        'chat-h4': 'chat_header',
+        'chat-init-msg': 'chat_init_msg',
+        'pill-prevention': 'pill_prevention',
+        'pill-organic': 'pill_organic',
+        'pill-chemicals': 'pill_chemicals'
+      };
+
+      for (const [id, key] of Object.entries(elements)) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = lang[key] || el.textContent;
+      }
+      
+      // Special cases
+      const dropZoneP1 = document.querySelector('#drop-zone p:first-of-type');
+      if (dropZoneP1) dropZoneP1.textContent = lang['upload_leaf_photo'] || "Upload leaf photo";
+      
+      const dropZonePSub = document.querySelector('#drop-zone p:last-of-type');
+      if (dropZonePSub) dropZonePSub.textContent = lang['upload_sub'] || "Drag and drop or click to browse";
+      
+      const browseBtn = document.querySelector('#drop-zone .btn-primary');
+      if (browseBtn) browseBtn.textContent = lang['browse_file'] || "Browse file";
+
+      document.getElementById('chat-inp').placeholder = lang['chat_placeholder'] || "Ask a question...";
+      
+      // Update result view if active
+      if (lastResult) {
+          // Re-trigger predict UI update if we want? Or just wait for next scan.
+          // Better to just update the headers manually
+          document.querySelector('#res-symptoms-block h5').textContent = lang['symptoms'] || 'Symptoms';
+          document.querySelector('#res-treatment-block h5').textContent = lang['treatment'] || 'Treatment';
+          document.querySelector('#res-prevention-block h5').textContent = lang['prevention'] || 'Prevention';
+          const pill = document.getElementById('res-status-pill');
+          if (pill && lastResult.status) pill.textContent = lang[lastResult.status] || lastResult.status;
+      }
+
+    } catch(e) {
+      console.error("Lang Error:", e);
+    }
+  }
+
+  document.getElementById('language-select').addEventListener('change', (e) => applyLanguage(e.target.value));
+
   // Dashboard Loader
   async function loadDashboard() {
     try {
@@ -608,22 +768,17 @@
       const resHist = await fetch('/api/history');
       const histData = await resHist.json();
       const list = document.getElementById('dashboard-recent');
-      list.innerHTML = '';
-      
-      histData.slice(0, 4).forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'recent-item';
-        const thumbUrl = item.filename ? `/uploads/${item.filename}` : '';
-        div.innerHTML = `
-          <img src="${thumbUrl}" class="recent-thumb" onerror="this.style.background='#e8e4db'">
+      const recent = document.getElementById('dashboard-recent');
+      recent.innerHTML = histData.slice(0, 4).map(item => `
+        <div class="recent-item">
+          <img src="${item.filename ? `/uploads/${item.filename}` : ''}" class="recent-thumb" onerror="this.style.background='#e8e4db'">
           <div class="recent-info">
             <div class="recent-name">${item.disease}</div>
             <div class="recent-date">${fmtDate(item.timestamp)}</div>
           </div>
-          <div class="status-pill status-${item.status}">${item.status}</div>
-        `;
-        list.appendChild(div);
-      });
+          <div class="status-pill status-${item.status}">${currentLang[item.status] || item.status}</div>
+        </div>
+      `).join('');
     } catch (e) { console.error(e); }
   }
 
@@ -795,8 +950,10 @@
     if (!currentSelection) return;
     
     document.getElementById('global-spinner').style.display = 'flex';
+    const lang = document.getElementById('language-select').value;
     const form = new FormData();
     form.append('image', currentSelection);
+    form.append('lang', lang);
     
     try {
       const res = await fetch('/api/predict', { method: 'POST', body: form });
@@ -817,17 +974,26 @@
     const res = document.getElementById('result-view');
     res.style.display = 'block';
     
+    const langData = data.lang || {};
+    
     const pill = document.getElementById('res-status-pill');
     pill.className = `status-pill status-${data.status}`;
-    pill.textContent = data.status;
+    pill.textContent = langData[data.status] || data.status;
     
     const health = data.status === 'healthy' ? data.confidence : Math.max(5, 100 - data.confidence);
     const healthBar = document.getElementById('res-health-bar');
     const healthVal = document.getElementById('res-health-val');
     
-    document.getElementById('res-disease-name').textContent = data.disease;
+    document.getElementById('res-health-label').textContent = langData['health_status'] || 'PLANT HEALTH';
+    document.getElementById('res-disease-name').textContent = data.translated_disease || data.disease;
     healthVal.textContent = Math.round(health) + '%';
     healthBar.style.width = health + '%';
+    
+    // UI Label translations
+    document.querySelector('#res-symptoms-block h5').textContent = langData['symptoms'] || 'Symptoms';
+    document.querySelector('#res-treatment-block h5').textContent = langData['treatment'] || 'Treatment';
+    document.querySelector('#res-prevention-block h5').textContent = langData['prevention'] || 'Prevention';
+    document.querySelector('#btn-analyse').textContent = langData['analyse'] || 'Analyse Plant';
     
     // Similar Diseases (Fix 3 logic)
     const simWrap = document.getElementById('res-similar-wrap');
@@ -882,9 +1048,7 @@
   }
 
   // Chat Logic
-  // Chat Logic
   let chatHistory = [];
-  let lastResult = null;
   function toggleChat() { document.getElementById('chat-widget').classList.toggle('collapsed'); }
   
   function chatQuick(txt) {
@@ -915,7 +1079,8 @@
           confidence: lastResult?.confidence || 0,
           status: lastResult?.status || 'unknown',
           severity: lastResult?.severity || 'Unknown',
-          crop: lastResult?.crop || ''
+          crop: lastResult?.crop || '',
+          lang: document.getElementById('language-select').value
         })
       });
       const data = await res.json();
