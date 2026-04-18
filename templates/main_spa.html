@@ -245,6 +245,53 @@
     .res-list li { margin-bottom: 8px; position: relative; padding-left: 14px; }
     .res-list li::before { content: "•"; position: absolute; left: 0; color: var(--sand); }
 
+    /* Camera Styles */
+    .camera-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: #000;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .camera-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #video-feed {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    .camera-controls {
+      position: absolute;
+      bottom: 40px;
+      display: flex;
+      gap: 40px;
+      align-items: center;
+    }
+    .cam-btn {
+      background: rgba(255,255,255,0.2);
+      border: 2px solid #fff;
+      color: #fff;
+      border-radius: 50%;
+      width: 50px; height: 50px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .cam-btn:hover { background: rgba(255,255,255,0.4); }
+    .cam-capture {
+      width: 80px; height: 80px; font-size: 32px;
+      background: #fff; color: #000;
+    }
+    .cam-capture:active { transform: scale(0.9); }
+
     /* Spinner */
     .spinner-overlay { position: fixed; inset: 0; background: rgba(245,242,237,0.8); z-index: 2000; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
     .spinner { width: 32px; height: 32px; border: 3px solid var(--sand); border-top-color: var(--fg); border-radius: 50%; animation: rot 0.8s linear infinite; }
@@ -319,8 +366,8 @@
             <div class="kpi-v" id="stat-diseased">0</div>
           </div>
           <div class="kpi">
-            <div class="kpi-l">Avg Confidence</div>
-            <div class="kpi-v" id="stat-conf">0%</div>
+            <div class="kpi-l">Avg Health</div>
+            <div class="kpi-v" id="stat-health">0%</div>
           </div>
         </div>
 
@@ -348,25 +395,33 @@
         <h1>Detect Disease</h1>
         <p class="h-sub">Analyse leaf images in seconds using artificial intelligence.</p>
         
-        <div class="card">
-          <div class="upload-box" id="drop-zone">
+        <div class="card" id="upload-card">
+          <div class="upload-box" id="drop-zone" style="cursor: pointer;">
             <div class="upload-ico">🍃</div>
             <p style="font-family: var(--font-serif); font-size: 18px; margin-bottom: 8px;">Upload leaf photo</p>
             <p style="font-size: 13px; color: var(--muted); margin-bottom: 24px;">Drag and drop or click to browse</p>
-            <div>
-              <button class="btn-primary" onclick="document.getElementById('file-input').click()">Browse file</button>
-              <button class="btn-secondary">Use camera</button>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+              <button class="btn-primary" type="button">Browse file</button>
+              <button class="btn-secondary" id="btn-camera" type="button" onclick="event.stopPropagation(); openCamera()">Use camera</button>
             </div>
             <input type="file" id="file-input" hidden accept="image/*">
           </div>
+        </div>
 
-          <div class="file-preview" id="file-preview" style="display: none;">
-            <img src="" alt="preview" class="preview-thumb" id="preview-img">
-            <div>
-              <div style="font-size: 13px; font-weight: 700; color: var(--fg);" id="preview-name">Leaf.jpg</div>
-              <div style="font-size: 11px; color: var(--muted);" id="preview-size">1.2 MB</div>
+        <div class="file-preview-wrap" id="file-preview" style="display: none;">
+          <div class="card" style="text-align: center; padding: 32px;">
+            <div style="margin-bottom: 24px; position: relative; max-width: 500px; margin-left: auto; margin-right: auto;">
+              <img src="" alt="preview" id="preview-img" style="width: 100%; height: auto; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.15); border: 4px solid #fff;">
+              <button onclick="resetUpload()" style="position: absolute; top: -12px; right: -12px; width: 32px; height: 32px; border-radius: 50%; background: #ef4444; color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">✕</button>
             </div>
-            <button class="btn-primary btn-analyse" id="btn-analyse">Analyse →</button>
+            <div style="margin-bottom: 24px;">
+              <h3 id="preview-name" style="font-size: 18px; margin-bottom: 4px; color: var(--fg);">Leaf.jpg</h3>
+              <p id="preview-size" style="font-size: 13px; color: var(--muted);">1.2 MB</p>
+            </div>
+            <div style="display: flex; gap: 16px; justify-content: center;">
+              <button class="btn-secondary" onclick="resetUpload()" style="padding-left: 32px; padding-right: 32px;">Try Again</button>
+              <button class="btn-primary btn-analyse" id="btn-analyse" style="padding-left: 48px; padding-right: 48px;">Analyse Plant</button>
+            </div>
           </div>
         </div>
 
@@ -401,6 +456,40 @@
                 <h5>Prevention</h5>
                 <ul class="res-list" id="res-prevention"><li>Monitor growth weekly.</li></ul>
               </div>
+            </div>
+            
+            <div id="res-uncertain-wrap" style="display: none; margin-top: 24px; padding: 20px; background: #fff1f2; border: 1px solid #fda4af; border-radius: 12px;">
+              <h4 style="color: #9f1239; font-size: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                ⚠️ Low Confidence Warning
+              </h4>
+              <div style="margin-bottom: 20px;">
+                <h5 style="font-size: 11px; text-transform: uppercase; color: #e11d48; margin-bottom: 8px;">Issues Detected</h5>
+                <ul id="res-issues-list" style="font-size: 13px; color: #4b5563; padding-left: 20px;"></ul>
+              </div>
+              <div>
+                <h5 style="font-size: 11px; text-transform: uppercase; color: #e11d48; margin-bottom: 8px;">Suggestions to improve</h5>
+                <ul id="res-suggestions-list" style="font-size: 13px; color: #4b5563; padding-left: 20px;"></ul>
+              </div>
+            </div>
+
+            <div id="res-similar-wrap" style="display: none; margin-top: 24px; padding: 16px; background: #fffaf0; border: 1px solid #fee2e2; border-radius: 8px;">
+              <h5 style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #991b1b; margin-bottom: 8px;">Possible Other Conditions</h5>
+              <div id="res-similar-list" style="font-size: 13px; color: #991b1b;"></div>
+            </div>
+            
+            <div style="margin-top: 24px; border-top: 1px solid var(--sand); padding-top: 20px;">
+               <button class="btn-secondary" onclick="resetAndNewScan()" style="width: 100%;">⚡ New Analysis</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Camera Overlay -->
+        <div id="camera-overlay" class="camera-overlay" style="display: none;">
+          <div class="camera-container">
+            <video id="video-feed" autoplay playsinline></video>
+            <div class="camera-controls">
+              <button class="cam-btn cam-close" onclick="closeCamera()">✕</button>
+              <button class="cam-btn cam-capture" id="capture-btn" onclick="capturePhoto()">●</button>
             </div>
           </div>
         </div>
@@ -514,7 +603,7 @@
       document.getElementById('stat-total').textContent = data.total || 0;
       document.getElementById('stat-healthy').textContent = data.healthy || 0;
       document.getElementById('stat-diseased').textContent = data.diseased || 0;
-      document.getElementById('stat-conf').textContent = (data.avg_confidence || 0) + '%';
+      document.getElementById('stat-health').textContent = (data.avg_health || 0) + '%';
       
       const resHist = await fetch('/api/history');
       const histData = await resHist.json();
@@ -564,8 +653,8 @@
           <div class="h-stats">
             <div class="status-pill status-${item.status}">${item.status}</div>
             <div class="c-bar-wrap">
-              <div style="font-size: 10px; font-weight: 700; color: var(--muted);">${item.confidence}% Confidence</div>
-              <div class="c-bar-bg"><div class="c-bar-fill" style="width: ${item.confidence}%"></div></div>
+              <div style="font-size: 10px; font-weight: 700; color: var(--muted);">${item.health}% Health</div>
+              <div class="c-bar-bg"><div class="c-bar-fill" style="width: ${item.health}%"></div></div>
             </div>
             <button class="h-del" onclick="deleteRecord(${item.id})">✕</button>
           </div>
@@ -619,10 +708,52 @@
     } catch (e) { console.error(e); }
   }
 
+  // Camera State
+  let stream = null;
+  
+  async function openCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      document.getElementById('video-feed').srcObject = stream;
+      document.getElementById('camera-overlay').style.display = 'flex';
+      document.body.style.overflow = 'hidden'; 
+    } catch (e) {
+      alert('Could not access camera: ' + e.message);
+    }
+  }
+
+  function closeCamera() {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
+    }
+    document.getElementById('camera-overlay').style.display = 'none';
+    document.body.style.overflow = '';
+  }
+
+  function capturePhoto() {
+    const video = document.getElementById('video-feed');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    
+    canvas.toBlob(blob => {
+      const file = new File([blob], 'captured_leaf.jpg', { type: 'image/jpeg' });
+      handleFile(file);
+      closeCamera();
+    }, 'image/jpeg', 0.9);
+  }
+
   // Detect Logic
   const fileInput = document.getElementById('file-input');
   const dropZone = document.getElementById('drop-zone');
   const preview = document.getElementById('file-preview');
+  const uploadCard = document.getElementById('upload-card');
   const analyseBtn = document.getElementById('btn-analyse');
 
   fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
@@ -634,8 +765,30 @@
     document.getElementById('preview-img').src = URL.createObjectURL(file);
     document.getElementById('preview-name').textContent = file.name;
     document.getElementById('preview-size').textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
-    preview.style.display = 'flex';
+    
+    // UI states
+    uploadCard.style.display = 'none';
+    preview.style.display = 'block';
     document.getElementById('result-view').style.display = 'none';
+    
+    // Discard previous chat history and reset chat UI
+    chatHistory = [];
+    lastResult = null;
+    document.getElementById('chat-msgs').innerHTML = `
+      <div class="msg msg-bot">Awaiting scan results to provide tailored advice...</div>
+    `;
+  }
+
+  function resetUpload() {
+    currentSelection = null;
+    uploadCard.style.display = 'block';
+    preview.style.display = 'none';
+    fileInput.value = '';
+  }
+
+  function resetAndNewScan() {
+    document.getElementById('result-view').style.display = 'none';
+    resetUpload();
   }
 
   analyseBtn.addEventListener('click', async () => {
@@ -660,6 +813,7 @@
   });
 
   function showResult(data) {
+    lastResult = data; // Current diagnosis for chatbot
     const res = document.getElementById('result-view');
     res.style.display = 'block';
     
@@ -675,6 +829,16 @@
     healthVal.textContent = Math.round(health) + '%';
     healthBar.style.width = health + '%';
     
+    // Similar Diseases (Fix 3 logic)
+    const simWrap = document.getElementById('res-similar-wrap');
+    if (data.similar_diseases && data.similar_diseases.length > 0) {
+      simWrap.style.display = 'block';
+      document.getElementById('res-similar-list').textContent = 
+        `Warning: Symptoms are very similar to ${data.similar_diseases.map(d => d.label).join(', ')}. Please inspect for overlapping signs.`;
+    } else {
+      simWrap.style.display = 'none';
+    }
+
     // Color logic
     if (health > 75) {
       healthBar.style.background = 'var(--fg)';
@@ -687,23 +851,40 @@
       healthVal.style.color = 'var(--red-warm)';
     }
 
-    document.getElementById('res-summary').textContent = data.result_summary || `Analysis suggests the presence of ${data.disease}. Recommended actions provided below.`;
+    document.getElementById('res-summary').textContent = data.description || data.message || data.result_summary || `Analysis suggests the presence of ${data.disease}. Recommended actions provided below.`;
     
     const fill = (id, items) => {
       const ul = document.getElementById(id);
       ul.innerHTML = items?.length ? items.map(i => `<li>${i}</li>`).join('') : '<li>No data available</li>';
     };
     
-    fill('res-symptoms', data.symptoms);
     fill('res-treatment', data.treatment);
     fill('res-prevention', data.prevention);
+    
+    // Handle Uncertain Status (Fix for issues/suggestions)
+    const uncWrap = document.getElementById('res-uncertain-wrap');
+    if (data.status === 'uncertain') {
+        uncWrap.style.display = 'block';
+        const issuesList = document.getElementById('res-issues-list');
+        const suggestionsList = document.getElementById('res-suggestions-list');
+        
+        issuesList.innerHTML = (data.issues || []).map(i => `<li>${i}</li>`).join('');
+        suggestionsList.innerHTML = (data.suggestions || []).map(s => `<li>${s}</li>`).join('');
+        
+        // Hide normal grids if uncertain? Or keep them as "best guess"?
+        // User wants issues displayed, usually alongside the "best guess" description.
+    } else {
+        uncWrap.style.display = 'none';
+    }
     
     res.scrollIntoView({ behavior: 'smooth' });
     currentChatDisease = data.disease;
   }
 
   // Chat Logic
-  let currentChatDisease = 'Unknown';
+  // Chat Logic
+  let chatHistory = [];
+  let lastResult = null;
   function toggleChat() { document.getElementById('chat-widget').classList.toggle('collapsed'); }
   
   function chatQuick(txt) {
@@ -716,27 +897,56 @@
     const txt = inp.value.trim();
     if (!txt) return;
     
+    // Add user message to UI and history
     addMsg(txt, 'user');
+    chatHistory.push({ role: 'user', content: txt });
     inp.value = '';
+    
+    // Show typing
+    const typingId = addMsg('Thinking...', 'bot', true);
     
     try {
       const res = await fetch('/api/chat', { 
         method: 'POST', 
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: txt, disease: currentChatDisease })
+        body: JSON.stringify({ 
+          messages: chatHistory,
+          disease: lastResult?.disease || 'Unknown',
+          confidence: lastResult?.confidence || 0,
+          status: lastResult?.status || 'unknown',
+          severity: lastResult?.severity || 'Unknown',
+          crop: lastResult?.crop || ''
+        })
       });
       const data = await res.json();
-      addMsg(data.response, 'bot');
-    } catch (e) { addMsg('Error connecting to assistant.', 'bot'); }
+      
+      // Replace typing with response
+      const botReply = data.reply || data.response || "I'm sorry, I couldn't process that.";
+      removeMsg(typingId);
+      addMsg(botReply, 'bot');
+      chatHistory.push({ role: 'assistant', content: botReply });
+      
+    } catch (e) { 
+      removeMsg(typingId);
+      addMsg('Error connecting to assistant.', 'bot'); 
+    }
   }
 
-  function addMsg(txt, role) {
+  function addMsg(txt, role, isTyping=false) {
     const msgs = document.getElementById('chat-msgs');
     const div = document.createElement('div');
-    div.className = `msg msg-${role}`;
-    div.textContent = txt;
+    const id = 'msg-' + Date.now();
+    div.id = id;
+    div.className = `msg ${role}`;
+    div.innerHTML = `<div class="msg-content">${txt.replace(/\n/g, '<br>')}</div>`;
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
+    return id;
+  }
+  
+  function removeMsg(id) {
+    const el = document.getElementById(id);
+    if(el) el.remove();
   }
 
   document.getElementById('chat-send').addEventListener('click', sendChat);

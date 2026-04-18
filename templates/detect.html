@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 {% block title %}Detect{% endblock %}
 {% block page_title %}Detect Disease{% endblock %}
@@ -17,11 +16,13 @@
 
   <!-- ─── UPLOAD CARD ──────────────────────────────────────── -->
   <div class="card">
-    <div class="card-hdr"><h3>📷 Upload Leaf Image</h3></div>
+    <div class="card-hdr">
+      <h3>📷 Upload Leaf Image</h3>
+    </div>
 
     <!-- Drop zone -->
     <div class="drop-zone" id="dropZone">
-      <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp" hidden/>
+      <input type="file" id="fileInput" accept="image/png,image/jpeg,image/jpg,image/webp" hidden />
       <div class="drop-ico-tile">🍃</div>
       <p class="drop-title">Drag and drop leaf image</p>
       <p class="drop-sub">JPG, PNG or WEBP (max 10MB)</p>
@@ -34,7 +35,7 @@
 
     <!-- Preview -->
     <div class="preview-zone hidden" id="previewZone">
-      <img id="previewImg" src="" alt="" class="preview-img" decoding="async"/>
+      <img id="previewImg" src="" alt="" class="preview-img" decoding="async" />
       <div class="preview-bar">
         <span id="previewNm" class="preview-nm"></span>
         <button class="btn-icon-sm" id="removeBtn">✕</button>
@@ -61,7 +62,7 @@
           <span class="badge badge-outline" id="badgeSev">Normal</span>
         </div>
       </div>
-      
+
       <div class="conf-mini-wrap">
         <div class="conf-bar-txt">
           <span>AI Confidence</span>
@@ -85,9 +86,18 @@
       </div>
 
       <div class="info-3col">
-        <div class="info-blk"><h4>Symptoms</h4><ul id="listSym" class="info-list"></ul></div>
-        <div class="info-blk"><h4>Treatment</h4><ul id="listTreat" class="info-list"></ul></div>
-        <div class="info-blk"><h4>Prevention</h4><ul id="listPrev" class="info-list"></ul></div>
+        <div class="info-blk">
+          <h4>Symptoms</h4>
+          <ul id="listSym" class="info-list"></ul>
+        </div>
+        <div class="info-blk">
+          <h4>Treatment</h4>
+          <ul id="listTreat" class="info-list"></ul>
+        </div>
+        <div class="info-blk">
+          <h4>Prevention</h4>
+          <ul id="listPrev" class="info-list"></ul>
+        </div>
       </div>
     </div>
 
@@ -106,29 +116,29 @@
 
   <!-- ─── AI CHATBOT WIDGET ────────────────────────────────────────── -->
   <div id="chatbot-widget">
-      <div class="chat-header">
-          <div>
-            <p class="chat-kicker">Plant Care Assistant</p>
-            <h3 id="chat-disease-title">Treatment support</h3>
-          </div>
-          <button id="close-chat">×</button>
+    <div class="chat-header">
+      <div>
+        <p class="chat-kicker">Plant Care Assistant</p>
+        <h3 id="chat-disease-title">Treatment support</h3>
       </div>
-      <div class="chat-messages" id="chat-messages">
-          <div class="bot-message">
-            <strong>Plant care assistant ready.</strong>
-            <span id="chatbot-intro">Run a diagnosis to unlock treatment, prevention, and remedy guidance.</span>
-          </div>
+      <button id="close-chat">×</button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="bot-message">
+        <strong>Plant care assistant ready.</strong>
+        <span id="chatbot-intro">Run a diagnosis to unlock treatment, prevention, and remedy guidance.</span>
       </div>
-      <div class="quick-actions">
-          <button class="quick-action-btn" onclick="askQuickAction('treatment')">Show treatment steps</button>
-          <button class="quick-action-btn" onclick="askQuickAction('prevention')">Prevention tips</button>
-          <button class="quick-action-btn" onclick="askQuickAction('organic')">Organic remedies</button>
-          <button class="quick-action-btn" onclick="askQuickAction('chemical')">Chemical options</button>
-      </div>
-      <div class="chat-input">
-          <input type="text" id="user-input" placeholder="Ask about treatment, prevention, remedies...">
-          <button id="send-message">➤</button>
-      </div>
+    </div>
+    <div class="quick-actions">
+      <button class="quick-action-btn" onclick="askQuickAction('treatment')">Show treatment steps</button>
+      <button class="quick-action-btn" onclick="askQuickAction('prevention')">Prevention tips</button>
+      <button class="quick-action-btn" onclick="askQuickAction('organic')">Organic remedies</button>
+      <button class="quick-action-btn" onclick="askQuickAction('chemical')">Chemical options</button>
+    </div>
+    <div class="chat-input">
+      <input type="text" id="user-input" placeholder="Ask about treatment, prevention, remedies...">
+      <button id="send-message">➤</button>
+    </div>
   </div>
   <button id="open-chatbot">💬 Plant Care Assistant</button>
 

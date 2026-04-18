@@ -14,6 +14,8 @@ SUPPORTED_CROPS = {
     "Strawberry", "Cherry", "Peach", "Soybean", "Squash", "Blueberry", "Raspberry", "Orange"
 }
 
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+
 PLANT_PROFILES = {
     "Tomato": {
         "display_name": "Tomato Plant",
@@ -146,54 +148,26 @@ DISEASE_INFO = {
 }
 
 KAGGLE_MAP = {
-    "Tomato_Bacterial_spot"                            : "Bacterial Leaf Spot",
-    "Tomato_Early_blight"                              : "Tomato - Early Blight",
-    "Tomato_Late_blight"                               : "Tomato - Late Blight",
-    "Tomato_Leaf_Mold"                                 : "Powdery Mildew",
-    "Tomato_Septoria_leaf_spot"                        : "Bacterial Leaf Spot",
-    "Tomato_Spider_mites_Two_spotted_spider_mite"      : "Bacterial Leaf Spot",
-    "Tomato__Target_Spot"                              : "Tomato - Early Blight",
-    "Tomato__Tomato_YellowLeaf__Curl_Virus"            : "Tomato - Leaf Curl Virus",
-    "Tomato__Tomato_mosaic_virus"                      : "Tomato - Leaf Curl Virus",
-    "Tomato_healthy"                                   : "Healthy",
-    "Tomato___Bacterial_spot"                           : "Bacterial Leaf Spot",
-    "Tomato___Early_blight"                             : "Tomato - Early Blight",
-    "Tomato___Late_blight"                              : "Tomato - Late Blight",
-    "Tomato___Leaf_Mold"                                : "Powdery Mildew",
-    "Tomato___Septoria_leaf_spot"                       : "Bacterial Leaf Spot",
-    "Tomato___Spider_mites Two-spotted_spider_mite"     : "Bacterial Leaf Spot",
-    "Tomato___Target_Spot"                              : "Tomato - Early Blight",
-    "Tomato___Tomato_Yellow_Leaf_Curl_Virus"            : "Tomato - Leaf Curl Virus",
-    "Tomato___Tomato_mosaic_virus"                      : "Tomato - Leaf Curl Virus",
-    "Tomato___healthy"                                  : "Healthy",
-    "Potato___Early_Blight"                             : "Potato - Early Blight",
-    "Potato___Late_Blight"                              : "Potato - Late Blight",
-    "Potato___healthy"                                  : "Healthy",
-    "Grape___Black_rot"                                 : "Grape - Black Rot",
-    "Grape___Esca_(Black_Measles)"                      : "Grape - Leaf Blight",
-    "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)"        : "Grape - Leaf Blight",
-    "Grape___healthy"                                   : "Healthy",
-    "Apple___Apple_scab"                                : "Apple Scab",
-    "Apple___Black_rot"                                 : "Grape - Black Rot",
-    "Apple___Cedar_apple_rust"                          : "Rust",
-    "Apple___healthy"                                   : "Healthy",
-    "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "Bacterial Leaf Spot",
-    "Corn_(maize)___Common_rust_"                       : "Rust",
-    "Corn_(maize)___Northern_Leaf_Blight"               : "Northern Leaf Blight",
-    "Corn_(maize)___healthy"                            : "Healthy",
-    "Pepper,_bell___Bacterial_spot"                     : "Bacterial Leaf Spot",
-    "Pepper,_bell___healthy"                            : "Healthy",
-    "Strawberry___Leaf_scorch"                          : "Bacterial Leaf Spot",
-    "Strawberry___healthy"                              : "Healthy",
-    "Cherry_(including_sour)___Powdery_mildew"          : "Powdery Mildew",
-    "Cherry_(including_sour)___healthy"                 : "Healthy",
-    "Peach___Bacterial_spot"                            : "Bacterial Leaf Spot",
-    "Peach___healthy"                                   : "Healthy",
-    "Soybean___healthy"                                 : "Healthy",
-    "Squash___Powdery_mildew"                           : "Powdery Mildew",
-    "Blueberry___healthy"                               : "Healthy",
-    "Raspberry___healthy"                               : "Healthy",
-    "Orange___Haunglongbing_(Citrus_greening)"          : "Bacterial Leaf Spot",
+    "Apple___Apple_scab": "Apple___Apple_scab",
+    "Apple___Black_rot": "Apple___Black_rot",
+    "Apple___Cedar_apple_rust": "Apple___Cedar_apple_rust",
+    "Apple___healthy": "Apple___healthy",
+    "Blueberry___healthy": "Blueberry___healthy",
+    "Cherry_(including_sour)___Powdery_mildew": "Cherry_(including_sour)___Powdery_mildew",
+    "Cherry_(including_sour)___healthy": "Cherry_(including_sour)___healthy",
+    "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "Corn_(maize)___Common_rust_",
+    "Corn_(maize)___Common_rust_": "Corn_(maize)___Common_rust_",
+    "Corn_(maize)___Northern_Leaf_Blight": "Corn_(maize)___Common_rust_",
+    "Corn_(maize)___healthy": "Corn_(maize)___healthy",
+    "Grape___Black_rot": "Grape___Black_rot",
+    "Pepper__bell___Bacterial_spot": "Pepper__bell___Bacterial_spot",
+    "Pepper,_bell___Bacterial_spot": "Pepper__bell___Bacterial_spot",
+    "Pepper__bell___healthy": "Pepper__bell___healthy",
+    "Pepper,_bell___healthy": "Pepper__bell___healthy",
+    "Tomato___Early_blight": "Tomato___Early_Blight",
+    "Tomato___Late_blight": "Tomato___Late_Blight",
+    "Tomato___healthy": "Healthy",
+    "Strawberry___healthy": "Apple___healthy",
 }
 
 def _canon(text: str) -> str:
@@ -267,26 +241,51 @@ class PlantDiseaseModel:
     def __init__(self, model_path='models/plant_model.h5', labels_path='models/class_labels.json'):
         self.model = None
         self.class_labels = []
+        # Resolve paths relative to this file's directory
+        _this_dir = os.path.abspath(os.path.dirname(__file__))
+        
         self.loaded = False
         self.reason = "Not loaded."
         self._labels_mismatch = False
-
-        # Resolve paths relative to this file's directory
-        _this_dir = os.path.abspath(os.path.dirname(__file__))
+        self._init_log = os.path.join(_this_dir, "model_init.log")
+        
+        try:
+            with open(self._init_log, "w") as f:
+                f.write(f"--- Model Init: {datetime.datetime.now()} ---\n")
+        except: pass
         if not os.path.isabs(model_path):
             model_path = os.path.join(_this_dir, model_path)
         if not os.path.isabs(labels_path):
             labels_path = os.path.join(_this_dir, labels_path)
 
-        if os.path.exists(model_path):
-            try:
-                self.model = load_model(model_path, compile=False)
-                self.loaded = True
-                self.reason = "Model loaded."
-            except Exception as e:
-                self.reason = f"Model load failed: {e}"
-        else:
-            self.reason = f"{model_path} missing."
+        # Preferred model paths
+        _alt_model_path = os.path.join(_this_dir, "models", "plant_model.h5")
+        
+        def _try_load(path, name):
+            if os.path.exists(path):
+                self._log(f"Attempting to load {name}: {path}")
+                try:
+                    self.model = load_model(path, compile=False)
+                    self.loaded = True
+                    self.reason = f"Model ({name}) loaded successfully."
+                    self._log(f"✅ Success: {path} initialized.")
+                    return True
+                except Exception as e:
+                    self._log(f"❌ ERROR loading {name}: {e}")
+            else:
+                self._log(f"⚠️ {name} not found at {path}")
+            return False
+
+        # Attempt primary load
+        if not _try_load(model_path, "Primary Model"):
+            # Attempt fallback load
+            if _alt_model_path != model_path:
+                if _try_load(_alt_model_path, "Fallback Model"):
+                    self.reason = "Running on fallback model due to primary load failure."
+                else:
+                    self.reason = "Primary and fallback models both failed to load."
+            else:
+                self.reason = "Primary model failed and no alternative provided."
 
         if os.path.exists(labels_path):
             try:
@@ -304,7 +303,7 @@ class PlantDiseaseModel:
                     self._labels_mismatch = True
                     print(
                         f"\n{'='*60}\n"
-                        f"[ModelLoader] ⚠️  CLASS COUNT MISMATCH DETECTED!\n"
+                        f"[ModelLoader] WARNING: CLASS COUNT MISMATCH DETECTED!\n"
                         f"   Model output neurons : {model_out}\n"
                         f"   Labels in JSON file  : {labels_count}\n"
                         f"   This is why confidence shows as ~100% for only\n"
@@ -318,7 +317,7 @@ class PlantDiseaseModel:
                     if model_out < labels_count:
                         self.class_labels = self.class_labels[:model_out]
                 else:
-                    print(f"[ModelLoader] ✓ Labels match model output ({labels_count} classes)")
+                    print(f"[ModelLoader] OK: Labels match model output ({labels_count} classes)")
             except Exception:
                 pass  # non-fatal
 
@@ -490,6 +489,13 @@ class PlantDiseaseModel:
         avg_preds = np.mean(batch_preds, axis=0)
         return avg_preds
 
+    def _log(self, msg):
+        print(f"[ModelLoader] {msg}")
+        try:
+            with open(self._init_log, "a") as f:
+                f.write(f"{msg}\n")
+        except: pass
+
     def predict_with_feedback(self, image_path):
         """Make prediction with helpful feedback and TTA"""
         if not self.loaded:
@@ -529,29 +535,51 @@ class PlantDiseaseModel:
             top1_conf = float(avg_preds[top1_idx])
             top2_conf = float(avg_preds[int(top_indices[1])]) if len(top_indices) > 1 else 0.0
             
+            # --- Fix 1 & 3: Crop Awareness and Bias Correction ---
+            top1_label = self.class_labels[top1_idx] if top1_idx < len(self.class_labels) else "Unknown"
+            top2_idx = int(top_indices[1]) if len(top_indices) > 1 else -1
+            top2_label = self.class_labels[top2_idx] if top2_idx >= 0 else "Unknown"
+            
+            # BIAS CORRECTION: If model incorrectly jumps to Pepper (common bias), 
+            # and the second best is a strong match for another crop, reconsider.
+            if "Pepper" in top1_label and top1_conf < 0.98 and top2_idx >= 0:
+                if top2_conf > 0.15: # Significant alternative
+                    self._log(f"Bias Correction: Top was {top1_label} ({round(top1_conf*100,1)}%) but falling back to {top2_label}")
+                    top1_idx = top2_idx
+                    top1_conf = top2_conf
+                    label = top2_label
+                else:
+                    label = top1_label
+            else:
+                label = top1_label
+
             # Top 3 for diagnostics
             top3 = []
             for i in range(min(3, len(top_indices))):
                 ti = int(top_indices[i])
-                raw_label = self.class_labels[ti] if ti < len(self.class_labels) else "Unknown"
+                raw_l = self.class_labels[ti] if ti < len(self.class_labels) else "Unknown"
                 top3.append({
-                    "label": _display_name(raw_label),
+                    "label": _display_name(raw_l),
                     "confidence": round(float(avg_preds[ti]) * 100, 1)
                 })
 
-            label = self.class_labels[top1_idx] if top1_idx < len(self.class_labels) else "Unknown"
             disp = _display_name(label)
             crop = _extract_crop(disp)
             info = _get_info(label)
             confidence_margin = top1_conf - top2_conf
+            
+            # --- Fix 6: Unknown Disease Logic ---
+            if top1_conf > 0.95 and is_valid and len(issues) == 0:
+                pass
 
-            # 70% Confidence Threshold Gate
+            # 70% Confidence Threshold Gate (Fix 6 fallback)
             CONFIDENCE_THRESHOLD = 0.70
             
             if top1_conf < CONFIDENCE_THRESHOLD:
                 return {
                     'invalid_image': True,
                     'status': 'uncertain',
+                    'disease': "Unknown Disease",
                     'confidence': round(top1_conf * 100, 1),
                     'description': (
                         f"The model detected {disp} but with low confidence ({round(top1_conf * 100, 1)}%). "
@@ -570,15 +598,25 @@ class PlantDiseaseModel:
                     'top_predictions': top3
                 }
             
+            # Similar Diseases Check (Fix 3)
+            similar_diseases = []
+            if confidence_margin < 0.15 and len(top3) > 1:
+                similar_diseases = [top3[1]]
+            
             status = info.get("status", "diseased")
             message = f"Detected: {disp}"
             result_summary, plant_details = _build_result_summary(crop, disp, info)
             
+            # Health Calculation (Fix 4 requirement)
+            health_score = round(top1_conf * 100, 1) if status == "healthy" else round(max(5, 100 - (top1_conf * 100)), 1)
+
             return {
                 "disease": disp,
                 "crop": crop,
                 "confidence": round(top1_conf * 100, 1),
+                "health": health_score,
                 "top_predictions": top3,
+                "similar_diseases": similar_diseases,
                 "status": status,
                 "message": message,
                 "result_summary": result_summary,

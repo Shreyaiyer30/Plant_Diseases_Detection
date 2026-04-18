@@ -16,7 +16,7 @@ BASE_DIR    = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 MODEL_PATH  = os.path.join(BASE_DIR, "models", "plant_model.h5")
 FIXED_PATH  = os.path.join(BASE_DIR, "models", "plant_model_fixed.h5")
 LABELS_PATH = os.path.join(BASE_DIR, "models", "class_labels.json")
-plant_model
+
 print(f"Model  : {MODEL_PATH}")
 print(f"Output : {FIXED_PATH}")
 print()
@@ -29,14 +29,29 @@ print(f"Labels: {len(labels)} classes")
 # ── Step 2: Read model config from HDF5 and strip quantization_config ─────────
 print("\nPatching model config in HDF5...")
 
-def strip_quantization_config(obj):
-    """Recursively remove quantization_config keys from a nested dict/list."""
+def strip_keras3_configs(obj):
+    """Recursively remove Keras 3 specific keys or translate them for Keras 2."""
     if isinstance(obj, dict):
-        return {k: strip_quantization_config(v)
-                for k, v in obj.items()
-                if k != "quantization_config"}
+        # Handle 'dtype': {'class_name': 'DTypePolicy', 'config': {'name': 'float32'}}
+        if obj.get("class_name") == "DTypePolicy":
+            return obj.get("config", {}).get("name", "float32")
+        
+        new_obj = {}
+        for k, v in obj.items():
+            # 1. Strip keys
+            if k in ["quantization_config", "optional", "registered_name", "module"]:
+                continue
+            
+            # 2. Translate keys
+            if k == "batch_shape":
+                new_obj["batch_input_shape"] = strip_keras3_configs(v)
+            elif k == "dtype" and isinstance(v, dict) and v.get("class_name") == "DTypePolicy":
+                new_obj[k] = v.get("config", {}).get("name", "float32")
+            else:
+                new_obj[k] = strip_keras3_configs(v)
+        return new_obj
     if isinstance(obj, list):
-        return [strip_quantization_config(i) for i in obj]
+        return [strip_keras3_configs(i) for i in obj]
     return obj
 
 import tensorflow as tf
@@ -51,8 +66,8 @@ with h5py.File(MODEL_PATH, "r") as f:
         model_config_str = model_config_str.decode("utf-8")
 
 model_config = json.loads(model_config_str)
-model_config_clean = strip_quantization_config(model_config)
-print("quantization_config keys stripped OK")
+model_config_clean = strip_keras3_configs(model_config)
+print("Keras 3 keys (batch_shape, optional, quantization) stripped OK")
 
 # ── Step 3: Reconstruct model from clean config ───────────────────────────────
 print("\nReconstructing model from patched config...")
@@ -78,14 +93,14 @@ print(f"\nOutput neurons : {output_classes}")
 print(f"Labels in JSON : {len(labels)}")
 
 if output_classes != len(labels):
-    print(f"\n⚠️  MISMATCH: model has {output_classes} outputs but labels.json has {len(labels)}")
-    print("   Trimming labels to match model output...")
+    print("\n[!] MISMATCH: model has", output_classes, "outputs but labels.json has", len(labels))
+    print("    Trimming labels to match model output...")
     labels = labels[:output_classes]
     with open(LABELS_PATH, "w") as f:
         json.dump(labels, f, indent=2)
-    print(f"   Labels trimmed and saved → {len(labels)} classes")
+    print("    Labels trimmed and saved ->", len(labels), "classes")
 else:
-    print("✓ Labels match model output")
+    print("[OK] Labels match model output")
 
 # ── Step 6: Quick sanity prediction ───────────────────────────────────────────
 print("\nRunning test prediction on random input...")
@@ -94,10 +109,10 @@ pred = model.predict(dummy, verbose=0)
 top_idx = int(np.argmax(pred[0]))
 top_conf = float(pred[0][top_idx]) * 100
 print(f"Test pred: class[{top_idx}] = {labels[top_idx]} @ {top_conf:.1f}%")
-print("(Random input → result is meaningless but confirms model runs)")
+print("(Random input -> result is meaningless but confirms model runs)")
 
 # ── Step 7: Re-save in TF2-compatible format ──────────────────────────────────
-print(f"\nSaving fixed model → {FIXED_PATH}")
+print(f"\nSaving fixed model -> {FIXED_PATH}")
 model.compile(
     optimizer="adam",
     loss="categorical_crossentropy",
@@ -112,11 +127,11 @@ backup = MODEL_PATH.replace(".h5", "_backup.h5")
 shutil.copy2(MODEL_PATH, backup)
 print(f"Backup: {backup}")
 shutil.copy2(FIXED_PATH, MODEL_PATH)
-print(f"Fixed model copied → {MODEL_PATH}")
+print(f"Fixed model copied -> {MODEL_PATH}")
 
 print()
 print("=" * 58)
-print("✅  Done! Model is now compatible with TF 2.21")
+print("SUCCESS: Model is now compatible with TF 2.x")
 print(f"   Classes  : {output_classes}")
 print(f"   Input    : {model.input_shape}")
 print(f"   Labels   : {LABELS_PATH}")
