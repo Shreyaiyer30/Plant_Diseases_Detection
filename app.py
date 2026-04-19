@@ -19,7 +19,10 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from model_loader import predict_disease, model_health
 import json
+from googletrans import Translator
 from disease_knowledge import DiseaseKnowledgeBase 
+
+translator = Translator()
 
 BASE_DIR      = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
@@ -56,7 +59,25 @@ def add_no_cache_headers(response):
     response.headers["Expires"] = "0"
     return response
 
-# ── Models ────────────────────────────────────────────────────────
+# ─── Language Helpers ─────────────────────────────────────────────
+def load_lang_json(code):
+    try:
+        path = os.path.join(os.path.dirname(__file__), "lang", f"{code}.json")
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except:
+        return load_lang_json("en")
+
+def safe_translate(text, dest):
+    if not text or dest == 'en': return text
+    try:
+        res = translator.translate(text, dest=dest)
+        return res.text
+    except Exception as e:
+        print(f"Translation Error: {e}")
+        return text
+
+# ─── Database Models ────────────────────────────────────────────────────────
 class User(UserMixin, db.Model):
     __tablename__ = "users"
     id         = db.Column(db.Integer, primary_key=True)
@@ -476,7 +497,25 @@ def api_predict():
     file.save(filepath)
 
     # Get prediction from model
+    lang_code = request.form.get('lang', 'en')
     result = predict_disease(filepath)
+    
+    # Translate specific fields if requested
+    if lang_code != 'en':
+        result['translated_disease'] = safe_translate(result.get('disease', ''), lang_code)
+        
+        # Translate lists
+        for key in ['symptoms', 'treatment', 'prevention']:
+            if key in result and isinstance(result[key], list):
+                result[key] = [safe_translate(s, lang_code) for s in result[key]]
+        
+        if result.get('status') == 'uncertain':
+            result['message'] = safe_translate(result.get('description', ''), lang_code)
+            result['issues'] = [safe_translate(i, lang_code) for i in result.get('issues', [])]
+            result['suggestions'] = [safe_translate(s, lang_code) for s in result.get('suggestions', [])]
+
+    # Add UI translations
+    result['lang'] = load_lang_json(lang_code)
 
     if result.get("model_unavailable"):
         try:
@@ -550,11 +589,24 @@ def chat():
     data = request.get_json()
     user_message = data.get("question") or data.get("message")
     disease = data.get("disease", "Unknown")
+    lang_code = data.get("lang", 'en')
 
-    response_text, source, meta = chatbot_reply(user_message, disease)
+    # Translate input to English if needed
+    eng_input = user_message
+    if lang_code != 'en':
+        eng_input = safe_translate(user_message, 'en')
+        print(f"Chat Translate: {user_message} -> {eng_input}")
+
+    response_text, source, meta = chatbot_reply(eng_input, disease)
+    
+    # Translate reply back to user's language
+    final_reply = response_text
+    if lang_code != 'en':
+        final_reply = safe_translate(response_text, lang_code)
+        print(f"Chat Translate Back: {response_text[:30]}... -> {final_reply[:30]}...")
 
     return jsonify({
-        "response": response_text,
+        "response": final_reply,
         "source": source,
         "meta": meta
     })
@@ -574,6 +626,10 @@ def save_chat_history():
     db.session.add(msg)
     db.session.commit()
     return jsonify({"status": "success"})
+
+@app.route('/api/lang/<lang_code>', methods=['GET'])
+def get_language_pack(lang_code):
+    return jsonify(load_lang_json(lang_code))
 
 def get_fallback_response(crop, disease, severity, messages):
     """Rule-based fallback if API is unavailable."""

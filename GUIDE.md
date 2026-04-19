@@ -59,3 +59,33 @@ The following steps were taken to build and stabilize the current version of Pla
 ---
 
 **Note**: To run the application, ensure your virtual environment is active and run `python app.py`. Access the dashboard at `http://localhost:5000`.
+
+**Note**: To add GEMINI_API_KEY its free of cost upto 15 request.
+
+**Note for .env file**: 
+1. Create a .env file in the root directory of the project.
+2. Add the following lines to the .env file:
+   GEMINI_API_KEY=your_gemini_api_key_here
+   FLASK_SECRET_KEY=your_random_secret_key_here
+3. Replace the placeholder values with your actual values.
+4. Run the application using `python app.py`.
+**Setup for .env file**:
+1. Set Flask SECRET_KEY:
+1: Create .env file in your project root
+SECRET_KEY=your_random_secret_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+2: Install dotenv
+pip install python-dotenv
+3: Load in Flask (app.py)
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
+app.secret_key = os.getenv("SECRET_KEY")
+2. Set Gemini API Key
+1: Get API key from Google AI Studio
+2: Load it in your code
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+3: Use it (example)
+import google.generativeai as genai
+genai.configure(api_key=GEMINI_API_KEY)

@@ -22,9 +22,6 @@ uploads/
 # Training logs and evaluation reports
 training_logs/
 
-# Dataset (too large for git)
-data/
-
 # OS junk
 .DS_Store
 Thumbs.db
