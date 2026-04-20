@@ -9,19 +9,6 @@ venv/
 # Environment
 .env
 
-# Flask instance (SQLite DB)
-instance/
-
-# Model weights (large binary files)
-models/*.h5
-models/*.keras
-
-# User uploads
-uploads/
-
-# Training logs and evaluation reports
-training_logs/
-
 # OS junk
 .DS_Store
 Thumbs.db
