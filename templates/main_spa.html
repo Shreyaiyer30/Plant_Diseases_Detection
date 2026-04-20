@@ -461,6 +461,10 @@
         <h1 id="detect-h1">Detect Disease</h1>
         <p class="h-sub" id="detect-sub">Analyse leaf images in seconds using artificial intelligence.</p>
         
+        <div id="general-error-wrap" style="display: none; margin-bottom: 24px; padding: 16px; background: #fee2e2; border: 1px solid #ef4444; border-radius: 8px; color: #b91c1c;">
+           <span id="general-error-msg"></span>
+        </div>
+
         <div class="card" id="upload-card">
           <div class="upload-box" id="drop-zone" style="cursor: pointer;">
             <div class="upload-ico">🍃</div>
@@ -939,6 +943,7 @@
     uploadCard.style.display = 'block';
     preview.style.display = 'none';
     fileInput.value = '';
+    document.getElementById('general-error-wrap').style.display = 'none';
   }
 
   function resetAndNewScan() {
@@ -950,6 +955,7 @@
     if (!currentSelection) return;
     
     document.getElementById('global-spinner').style.display = 'flex';
+    document.getElementById('general-error-wrap').style.display = 'none';
     const lang = document.getElementById('language-select').value;
     const form = new FormData();
     form.append('image', currentSelection);
@@ -959,11 +965,18 @@
       const res = await fetch('/api/predict', { method: 'POST', body: form });
       const data = await res.json();
       
-      if (!res.ok) throw new Error(data.error || 'Server error');
+      if (!res.ok) {
+        if (data.issues && data.issues.length > 0) {
+          showResult(data);
+          return;
+        }
+        throw new Error(data.error || data.message || 'Server error');
+      }
       
       showResult(data);
     } catch (e) {
-      alert(e.message);
+      document.getElementById('general-error-msg').textContent = e.message;
+      document.getElementById('general-error-wrap').style.display = 'block';
     } finally {
       document.getElementById('global-spinner').style.display = 'none';
     }
@@ -980,12 +993,13 @@
     pill.className = `status-pill status-${data.status}`;
     pill.textContent = langData[data.status] || data.status;
     
-    const health = data.status === 'healthy' ? data.confidence : Math.max(5, 100 - data.confidence);
+    const health = (data.status === 'uncertain' || data.status === 'invalid') ? 0 :
+                   (data.status === 'healthy' ? data.confidence : Math.max(5, 100 - (data.confidence || 0)));
     const healthBar = document.getElementById('res-health-bar');
     const healthVal = document.getElementById('res-health-val');
     
     document.getElementById('res-health-label').textContent = langData['health_status'] || 'PLANT HEALTH';
-    document.getElementById('res-disease-name').textContent = data.translated_disease || data.disease;
+    document.getElementById('res-disease-name').textContent = data.translated_disease || data.disease || 'Unable to Diagnose';
     healthVal.textContent = Math.round(health) + '%';
     healthBar.style.width = health + '%';
     
@@ -1024,21 +1038,28 @@
       ul.innerHTML = items?.length ? items.map(i => `<li>${i}</li>`).join('') : '<li>No data available</li>';
     };
     
-    fill('res-treatment', data.treatment);
-    fill('res-prevention', data.prevention);
+    const isError = (data.status === 'uncertain' || data.status === 'invalid' || (data.issues && data.issues.length > 0));
+    
+    const resGrid = document.querySelector('.res-grid');
+    if (isError) {
+      resGrid.style.display = 'none';
+      document.getElementById('res-disease-name').textContent = 'Unable to Diagnose';
+    } else {
+      resGrid.style.display = 'grid';
+      fill('res-symptoms', data.symptoms);
+      fill('res-treatment', data.treatment);
+      fill('res-prevention', data.prevention);
+    }
     
     // Handle Uncertain Status (Fix for issues/suggestions)
     const uncWrap = document.getElementById('res-uncertain-wrap');
-    if (data.status === 'uncertain') {
+    if (isError) {
         uncWrap.style.display = 'block';
         const issuesList = document.getElementById('res-issues-list');
         const suggestionsList = document.getElementById('res-suggestions-list');
         
         issuesList.innerHTML = (data.issues || []).map(i => `<li>${i}</li>`).join('');
         suggestionsList.innerHTML = (data.suggestions || []).map(s => `<li>${s}</li>`).join('');
-        
-        // Hide normal grids if uncertain? Or keep them as "best guess"?
-        // User wants issues displayed, usually alongside the "best guess" description.
     } else {
         uncWrap.style.display = 'none';
     }

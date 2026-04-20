@@ -138,6 +138,13 @@ DISEASE_INFO = {
         "treatment" : ["Apply Azoxystrobin or Pyraclostrobin", "Rotate with non-grass crops", "Manage irrigation"],
         "prevention": ["Use resistant hybrids", "Conventional tillage to bury debris", "Rotate crops"],
     },
+    "Gray Leaf Spot": {
+        "status": "diseased", "severity": "High",
+        "description": "Fungal infection causing leaf lesions and chlorosis.",
+        "symptoms": ["Lesions often develop into tan or brown spots and streaks", "Reduces photosynthetic area", "Chlorosis around lesions"],
+        "treatment": ["Apply fungicide timely at first sign", "Increase plant spacing"],
+        "prevention": ["Use resistant plant hybrids", "Practice crop rotation", "Clear debris to avoid overwintering spores"],
+    },
     "Bacterial Leaf Spot": {
         "status": "diseased", "severity": "Moderate",
         "description": "Caused by Xanthomonas species. Water-soaked angular lesions.",
@@ -155,9 +162,9 @@ KAGGLE_MAP = {
     "Blueberry___healthy": "Blueberry___healthy",
     "Cherry_(including_sour)___Powdery_mildew": "Cherry_(including_sour)___Powdery_mildew",
     "Cherry_(including_sour)___healthy": "Cherry_(including_sour)___healthy",
-    "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "Corn_(maize)___Common_rust_",
+    "Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot": "Gray Leaf Spot",
     "Corn_(maize)___Common_rust_": "Corn_(maize)___Common_rust_",
-    "Corn_(maize)___Northern_Leaf_Blight": "Corn_(maize)___Common_rust_",
+    "Corn_(maize)___Northern_Leaf_Blight": "Northern Leaf Blight",
     "Corn_(maize)___healthy": "Corn_(maize)___healthy",
     "Grape___Black_rot": "Grape___Black_rot",
     "Pepper__bell___Bacterial_spot": "Pepper__bell___Bacterial_spot",
@@ -540,18 +547,7 @@ class PlantDiseaseModel:
             top2_idx = int(top_indices[1]) if len(top_indices) > 1 else -1
             top2_label = self.class_labels[top2_idx] if top2_idx >= 0 else "Unknown"
             
-            # BIAS CORRECTION: If model incorrectly jumps to Pepper (common bias), 
-            # and the second best is a strong match for another crop, reconsider.
-            if "Pepper" in top1_label and top1_conf < 0.98 and top2_idx >= 0:
-                if top2_conf > 0.15: # Significant alternative
-                    self._log(f"Bias Correction: Top was {top1_label} ({round(top1_conf*100,1)}%) but falling back to {top2_label}")
-                    top1_idx = top2_idx
-                    top1_conf = top2_conf
-                    label = top2_label
-                else:
-                    label = top1_label
-            else:
-                label = top1_label
+            label = top1_label
 
             # Top 3 for diagnostics
             top3 = []
@@ -607,8 +603,17 @@ class PlantDiseaseModel:
             message = f"Detected: {disp}"
             result_summary, plant_details = _build_result_summary(crop, disp, info)
             
-            # Health Calculation (Fix 4 requirement)
-            health_score = round(top1_conf * 100, 1) if status == "healthy" else round(max(5, 100 - (top1_conf * 100)), 1)
+            # Health Calculation (Fix 4 requirement - Severity based logic)
+            if status == "healthy":
+                health_score = round(top1_conf * 100, 1)
+            elif status in ['uncertain', 'invalid']:
+                health_score = 0
+            else:
+                sev = str(info.get("severity", "")).lower()
+                if 'high' in sev: health_score = 15.0
+                elif 'moderate' in sev or 'medium' in sev: health_score = 45.0
+                elif 'low' in sev: health_score = 75.0
+                else: health_score = round(max(5.0, 100.0 - (top1_conf * 100)), 1)
 
             return {
                 "disease": disp,

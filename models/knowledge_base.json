@@ -231,5 +231,54 @@
     "prevention": ["Plant resistant hybrids", "Plant early to avoid late-season humidity"],
     "organic_remedies": ["Sulfur spray"],
     "chemical_remedies": ["Azoxystrobin", "Propiconazole"]
+  },
+  "Gray Leaf Spot": {
+    "symptoms": [
+      "Lesions often develop into tan or brown spots and streaks",
+      "Reduces photosynthetic area",
+      "Chlorosis around lesions"
+    ],
+    "treatment": [
+      "Apply fungicide timely at first sign",
+      "Increase plant spacing"
+    ],
+    "prevention": [
+      "Use resistant plant hybrids",
+      "Practice crop rotation",
+      "Clear debris to avoid overwintering spores"
+    ],
+    "organic_remedies": [
+      "Remove heavily infected lower leaves",
+      "Maintain proper weed control"
+    ],
+    "chemical_remedies": [
+      "Pyraclostrobin",
+      "Propiconazole"
+    ]
+  },
+  "Northern Leaf Blight": {
+    "symptoms": [
+      "Long, tan cigar-shaped lesions",
+      "Grayish-green spots",
+      "Premature drying of leaves"
+    ],
+    "treatment": [
+      "Apply Azoxystrobin or Pyraclostrobin",
+      "Rotate with non-grass crops",
+      "Manage irrigation"
+    ],
+    "prevention": [
+      "Use resistant hybrids",
+      "Conventional tillage to bury debris",
+      "Rotate crops"
+    ],
+    "organic_remedies": [
+      "Ensure proper airflow and spacing",
+      "Compost or bury crop debris deeply"
+    ],
+    "chemical_remedies": [
+      "Azoxystrobin",
+      "Pyraclostrobin"
+    ]
   }
 }

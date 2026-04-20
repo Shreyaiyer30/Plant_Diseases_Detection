@@ -105,6 +105,18 @@ class Prediction(db.Model):
     timestamp  = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     def to_dict(self):
+        health = 0
+        if self.status == 'healthy':
+            health = self.confidence
+        elif self.status in ['uncertain', 'invalid']:
+            health = 0
+        else:
+            sev = str(self.severity).lower() if self.severity else ""
+            if 'high' in sev: health = 15
+            elif 'moderate' in sev or 'medium' in sev: health = 45
+            elif 'low' in sev: health = 75
+            else: health = max(5.0, 100.0 - self.confidence)
+            
         return {
             "id"        : self.id,
             "disease"   : self.disease,
@@ -113,6 +125,7 @@ class Prediction(db.Model):
             "severity"  : self.severity,
             "filename"  : self.filename,
             "timestamp" : self.timestamp.isoformat(timespec="seconds"),
+            "health"    : round(health, 1)
         }
 
 
