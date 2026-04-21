@@ -1,6 +1,6 @@
 """
 chatbot.py - AI Chatbot for PlantCure
-Handles chat interactions for plant disease treatment advice
+Handles chat interactions for plant disease treatment advice using Groq API
 """
 
 import os
@@ -9,22 +9,22 @@ import re
 from datetime import datetime
 from typing import Dict, Any, Tuple, Optional
 
-# Try to import Gemini API (optional, for advanced responses)
+# Try to import Groq API
 try:
-    import google.generativeai as genai
-    GEMINI_AVAILABLE = True
+    from groq import Groq
+    GROQ_AVAILABLE = True
 except ImportError:
-    GEMINI_AVAILABLE = False
+    GROQ_AVAILABLE = False
 
 from chatbot_helper import chatbot_reply, get_chat_response
 
-# Configure Gemini if API key is available
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-if GEMINI_API_KEY and GEMINI_AVAILABLE:
-    genai.configure(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel('gemini-pro')
+# Configure Groq if API key is available
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+if GROQ_API_KEY and GROQ_AVAILABLE:
+    groq_client = Groq(api_key=GROQ_API_KEY)
+    groq_model = 'llama3-70b-8192' # Fast, highly capable alternative 
 else:
-    gemini_model = None
+    groq_client = None
 
 
 class PlantChatbot:
@@ -71,11 +71,11 @@ class PlantChatbot:
         # Try to get response from knowledge base first
         response, source, meta = chatbot_reply(user_message, disease)
         
-        # If response is too generic or from fallback, try Gemini
-        if self._needs_better_response(response, source) and gemini_model:
-            gemini_response = self._get_gemini_response(user_message, disease)
-            if gemini_response:
-                return gemini_response, "gemini", meta
+        # If response is too generic or from fallback, try Groq
+        if self._needs_better_response(response, source) and groq_client:
+            api_response = self._get_groq_response(user_message, disease)
+            if api_response:
+                return api_response, "groq", meta
         
         return response, source, meta
     
@@ -95,8 +95,8 @@ class PlantChatbot:
         return any(term in message.lower() for term in help_terms) and len(message.split()) < 5
     
     def _needs_better_response(self, response: str, source: str) -> bool:
-        """Check if response needs improvement from Gemini"""
-        if source == "gemini":
+        """Check if response needs improvement from dynamic LLM"""
+        if source == "groq":
             return False
         
         generic_responses = [
@@ -108,26 +108,27 @@ class PlantChatbot:
         
         return any(generic in response for generic in generic_responses)
     
-    def _get_gemini_response(self, user_message: str, disease: str) -> Optional[str]:
-        """Get response from Gemini API"""
-        if not gemini_model:
+    def _get_groq_response(self, user_message: str, disease: str) -> Optional[str]:
+        """Get response from Groq API"""
+        if not groq_client:
             return None
         
         try:
-            prompt = f"""You are a plant disease expert assistant. The detected disease is {disease}. 
-            User question: {user_message}
+            prompt = f"You are a helpful plant disease expert assistant. The detected disease currently is {disease}. The user asks: '{user_message}'. Provide a helpful, accurate, and concise (2-3 sentences) response about the treatment, prevention, or symptoms. Provide practical farming advice."
             
-            Provide a helpful, accurate response about plant disease treatment, prevention, or symptoms.
-            Keep it concise (2-3 sentences) and practical.
-            If you don't know, suggest consulting a local plant expert.
-            """
-            
-            response = gemini_model.generate_content(prompt)
-            return response.text.strip()
+            chat_completion = groq_client.chat.completions.create(
+                messages=[
+                    {"role": "system", "content": "You are a concise AI plant health assistant."},
+                    {"role": "user", "content": prompt}
+                ],
+                model=groq_model,
+                temperature=0.4,
+                max_completion_tokens=256,
+            )
+            return chat_completion.choices[0].message.content.strip()
         except Exception as e:
-            print(f"Gemini error: {e}")
+            print(f"Groq API error: {e}")
             return None
-
 
 # Singleton instance
 _chatbot = None

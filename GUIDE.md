@@ -83,9 +83,22 @@ load_dotenv()
 
 app.secret_key = os.getenv("SECRET_KEY")
 2. Set Gemini API Key
-1: Get API key from Google AI Studio
+link: https://console.groq.com/
+1: Get API key from Groq
 2: Load it in your code
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = os.getenv("GROQ_API_KEY")
 3: Use it (example)
-import google.generativeai as genai
-genai.configure(api_key=GEMINI_API_KEY)
+!pip install groq
+
+# Code
+from groq import Groq
+client = Groq(api_key="YOUR_FREE_KEY")
+response = client.chat.completions.create(
+    model="llama3-8b-8192",  # Free model
+    messages=[
+        {"role": "user", "content": "How to treat powdery mildew?"}
+    ]
+)
+print(response.choices[0].message.content)
+For Flask api key
+python -c "import secrets; print(secrets.token_hex(32))"

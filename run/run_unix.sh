@@ -8,7 +8,7 @@ echo -e "${GREEN}============================================${RESET}\n"
 source .venv/bin/activate
 echo -e "${YELLOW}[SETUP]${RESET} Installing dependencies..."
 pip install -r requirements.txt -q
-[ -f "models/plant_model.h5" ] && echo -e "${GREEN}[INFO]${RESET}  Trained model found." || echo -e "${YELLOW}[INFO]${RESET}  No model — Demo Mode."
+[ -f "models/combined_plant_disease_model" ] && echo -e "${GREEN}[INFO]${RESET}  Trained model found." || echo -e "${YELLOW}[INFO]${RESET}  No model — Demo Mode."
 echo -e "\n${GREEN}[START]${RESET} Open http://localhost:5000 in your browser."
 echo -e "        Press Ctrl+C to stop.\n"
 python3 app.py

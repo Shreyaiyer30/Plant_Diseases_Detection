@@ -9,7 +9,7 @@ Usage (run from project root):
 Steps:
   1. Paste PlantVillage dataset into  data/PlantVillage/
   2. Run this script from the project root
-  3. Model saved to  models/plant_model.h5
+  3. Model saved to  models/combined_plant_disease_model
   4. class_labels.json auto-updated
   5. python app.py
 
@@ -35,7 +35,7 @@ parser.add_argument("--batch",     type=int,   default=64)   # was 32
 parser.add_argument("--img-size",  type=int,   default=128)  # was 224
 parser.add_argument("--val-split", type=float, default=0.20)
 parser.add_argument("--fine-tune", action="store_true")
-parser.add_argument("--output",    default=os.path.join(BASE_DIR, "models", "plant_model.h5"))
+parser.add_argument("--output",    default=os.path.join(BASE_DIR, "models", "combined_plant_disease_model"))
 parser.add_argument("--label-smoothing", type=float, default=0.08)
 parser.add_argument("--resume", action="store_true",
                     help="Resume from last epoch checkpoint if available")

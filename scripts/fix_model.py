@@ -13,7 +13,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"]  = "3"
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
 BASE_DIR    = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-MODEL_PATH  = os.path.join(BASE_DIR, "models", "plant_model.h5")
+MODEL_PATH  = os.path.join(BASE_DIR, "models", "combined_plant_disease_model")
 FIXED_PATH  = os.path.join(BASE_DIR, "models", "plant_model_fixed.h5")
 LABELS_PATH = os.path.join(BASE_DIR, "models", "class_labels.json")
 

@@ -10,7 +10,7 @@ Differences vs train_model.py:
   - Batch size: 64        (vs 32)
   - Epochs:     10        (start here, increase if accuracy is low)
   - Uses ImageDataGenerator (compatible with older TF/Keras versions)
-  - Saves to models/plant_model.h5  (same path app.py expects)
+  - Saves to models/combined_plant_disease_model  (same path app.py expects)
 
 Accuracy expectation:
   - Simple CNN @ 10 epochs: ~70-80% validation accuracy
@@ -43,7 +43,7 @@ parser.add_argument("--dataset",  default=os.path.join(BASE_DIR, "data", "PlantV
 parser.add_argument("--epochs",   type=int,   default=10)
 parser.add_argument("--batch",    type=int,   default=64)
 parser.add_argument("--img-size", type=int,   default=128)
-parser.add_argument("--output",   default=os.path.join(MODELS_DIR, "plant_model.h5"))
+parser.add_argument("--output",   default=os.path.join(MODELS_DIR, "combined_plant_disease_model"))
 args = parser.parse_args()
 
 IMG_SIZE   = args.img_size

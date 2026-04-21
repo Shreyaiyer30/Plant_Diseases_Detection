@@ -17,7 +17,7 @@ call .venv\Scripts\activate.bat
 echo [SETUP] Installing dependencies ...
 pip install -r requirements.txt -q
 
-if exist "models\plant_model.h5" (
+if exist "models\combined_plant_disease_model" (
     echo [INFO]  Trained model found.
 ) else (
     echo [INFO]  No model — running in Demo Mode.

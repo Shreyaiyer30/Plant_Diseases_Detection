@@ -3,7 +3,11 @@ app.py  —  PlantCure v3
 ========================
 Python 3.11+ | Flask 3.1+ | SQLite | Anthropic AI chatbot
 """
-import os
+import os, sys, io
+# Fix for Windows terminal UTF-8 output
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
 from dotenv import load_dotenv
 load_dotenv()
 import datetime, json, re
@@ -12,7 +16,8 @@ os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
 
 from flask import (Flask, render_template, request, jsonify,
                    redirect, url_for, flash, send_from_directory, abort)
-from flask_sqlalchemy import SQLAlchemy
+from pymongo import MongoClient
+from bson.objectid import ObjectId
 from flask_login import (LoginManager, UserMixin, login_user,
                          logout_user, login_required, current_user)
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -35,15 +40,14 @@ os.makedirs(INSTANCE_DIR,  exist_ok=True)
 app = Flask(__name__)
 app.config.update(
     SECRET_KEY                     = os.environ.get("SECRET_KEY", "plantcure-secret-2025"),
-    SQLALCHEMY_DATABASE_URI        = f"sqlite:///{os.path.join(INSTANCE_DIR,'plantcure.db')}",
-    SQLALCHEMY_TRACK_MODIFICATIONS = False,
     UPLOAD_FOLDER                  = UPLOAD_FOLDER,
     MAX_CONTENT_LENGTH             = 10 * 1024 * 1024,
     SEND_FILE_MAX_AGE_DEFAULT      = 0,
     TEMPLATES_AUTO_RELOAD          = True,
 )
 
-db            = SQLAlchemy(app)
+mongo_client = MongoClient(os.environ.get("MONGODB_URI", "mongodb://localhost:27017"))
+mongo_db = mongo_client[os.environ.get("MONGODB_DB", "plantcure")]
 login_manager = LoginManager(app)
 login_manager.login_view             = "login"
 login_manager.login_message          = "Please log in to continue."
@@ -77,97 +81,69 @@ def safe_translate(text, dest):
         print(f"Translation Error: {e}")
         return text
 
-# ─── Database Models ────────────────────────────────────────────────────────
-class User(UserMixin, db.Model):
-    __tablename__ = "users"
-    id         = db.Column(db.Integer, primary_key=True)
-    name       = db.Column(db.String(100), nullable=False)
-    email      = db.Column(db.String(150), unique=True, nullable=False)
-    password   = db.Column(db.String(256), nullable=False)
-    role       = db.Column(db.String(30), default="farmer")
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-    predictions= db.relationship("Prediction", backref="user",
-                                 lazy=True, cascade="all, delete-orphan")
+# ─── Database Models (PyMongo) ────────────────────────────────────────────────
+class User(UserMixin):
+    def __init__(self, user_data):
+        self.id = str(user_data.get("_id"))
+        self.name = user_data.get("name")
+        self.email = user_data.get("email")
+        self.password = user_data.get("password")
+        self.role = user_data.get("role", "farmer")
 
-    def set_password(self, raw): self.password = generate_password_hash(raw)
-    def check_password(self, raw): return check_password_hash(self.password, raw)
+    def check_password(self, raw):
+        return check_password_hash(self.password, raw)
 
-
-class Prediction(db.Model):
-    __tablename__ = "predictions"
-    id         = db.Column(db.Integer, primary_key=True)
-    user_id    = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    filename   = db.Column(db.String(200))
-    disease    = db.Column(db.String(200))
-    confidence = db.Column(db.Float, default=0.0)
-    status     = db.Column(db.String(50))
-    severity   = db.Column(db.String(50))
-    timestamp  = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-
-    def to_dict(self):
+def prediction_to_dict(pred):
+    disease_text = (pred.get("disease") or "").lower()
+    normalized_status = pred.get("status")
+    if "healthy" in disease_text:
+        normalized_status = "healthy"
+    
+    health = 0
+    if normalized_status == 'healthy':
+        health = 100.0
+    elif normalized_status in ['uncertain', 'invalid']:
         health = 0
-        if self.status == 'healthy':
-            health = self.confidence
-        elif self.status in ['uncertain', 'invalid']:
-            health = 0
-        else:
-            sev = str(self.severity).lower() if self.severity else ""
-            if 'high' in sev: health = 15
-            elif 'moderate' in sev or 'medium' in sev: health = 45
-            elif 'low' in sev: health = 75
-            else: health = max(5.0, 100.0 - self.confidence)
-            
-        return {
-            "id"        : self.id,
-            "disease"   : self.disease,
-            "confidence": round(self.confidence, 1),
-            "status"    : self.status,
-            "severity"  : self.severity,
-            "filename"  : self.filename,
-            "timestamp" : self.timestamp.isoformat(timespec="seconds"),
-            "health"    : round(health, 1)
-        }
+    else:
+        sev = str(pred.get("severity") or "").lower()
+        if 'high' in sev: health = 10.0
+        elif 'moderate' in sev or 'medium' in sev: health = 40.0
+        elif 'low' in sev: health = 70.0
+        else: health = max(5.0, 100.0 - pred.get("confidence", 0.0))
+        
+    return {
+        "id"        : str(pred.get("_id")),
+        "disease"   : pred.get("disease"),
+        "confidence": round(pred.get("confidence", 0.0), 1),
+        "status"    : normalized_status,
+        "severity"  : pred.get("severity"),
+        "filename"  : pred.get("filename"),
+        "timestamp" : pred.get("timestamp").isoformat(timespec="seconds") if pred.get("timestamp") else "",
+        "health"    : round(health, 1),
+        "diseased"  : round(100.0 - health, 1)
+    }
 
-
-class PlantTreatment(db.Model):
-    __tablename__ = "plant_treatments"
-    id               = db.Column(db.Integer, primary_key=True)
-    disease_name     = db.Column(db.String(200), unique=True, nullable=False)
-    treatment_steps  = db.Column(db.Text)
-    prevention_tips  = db.Column(db.Text)
-    chemical_remedies = db.Column(db.Text)
-    organic_remedies  = db.Column(db.Text)
-    common_questions = db.Column(db.Text)  # JSON string of Q&A pairs
-    created_at       = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "disease_name": self.disease_name,
-            "treatment_steps": self.treatment_steps,
-            "prevention_tips": self.prevention_tips,
-            "chemical_remedies": self.chemical_remedies,
-            "organic_remedies": self.organic_remedies,
-            "common_questions": self.common_questions,
-            "created_at": self.created_at.isoformat()
-        }
-
-
-class ChatMessage(db.Model):
-    __tablename__ = "chat_messages"
-    id          = db.Column(db.Integer, primary_key=True)
-    user_id     = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    disease     = db.Column(db.String(200))
-    user_query  = db.Column(db.Text)
-    response    = db.Column(db.Text)
-    confidence  = db.Column(db.Float)  # Added for compliance
-    source      = db.Column(db.String(50))  # gemini or fallback
-    timestamp   = db.Column(db.DateTime, default=datetime.datetime.utcnow)
-
+def treatment_to_dict(treat):
+    return {
+        "id": str(treat.get("_id")),
+        "disease_name": treat.get("disease_name"),
+        "treatment_steps": treat.get("treatment_steps"),
+        "prevention_tips": treat.get("prevention_tips"),
+        "chemical_remedies": treat.get("chemical_remedies"),
+        "organic_remedies": treat.get("organic_remedies"),
+        "common_questions": treat.get("common_questions"),
+        "created_at": treat.get("created_at").isoformat() if hasattr(treat.get("created_at"), "isoformat") else ""
+    }
 
 @login_manager.user_loader
 def load_user(uid):
-    return db.session.get(User, int(uid))
+    try:
+        user_data = mongo_db.users.find_one({"_id": ObjectId(uid)})
+        if user_data:
+            return User(user_data)
+    except Exception:
+        pass
+    return None
 
 def allowed_file(fn):
     return "." in fn and fn.rsplit(".", 1)[1].lower() in ALLOWED_EXT
@@ -416,7 +392,8 @@ def login():
         email    = request.form.get("email","").strip().lower()
         password = request.form.get("password","")
         remember = bool(request.form.get("remember"))
-        user     = User.query.filter_by(email=email).first()
+        user_data = mongo_db.users.find_one({"email": email})
+        user = User(user_data) if user_data else None
         if user and user.check_password(password):
             login_user(user, remember=remember)
             flash(f"Welcome back, {user.name}! 🌿", "success")
@@ -439,13 +416,12 @@ def register():
         if "@" not in email:     errors.append("Enter a valid email.")
         if len(password) < 6:   errors.append("Password must be at least 6 characters.")
         if password != confirm:  errors.append("Passwords do not match.")
-        if User.query.filter_by(email=email).first(): errors.append("Email already registered.")
+        if mongo_db.users.find_one({"email": email}): errors.append("Email already registered.")
         if errors:
             for e in errors: flash(e, "danger")
         else:
-            u = User(name=name, email=email, role=role)
-            u.set_password(password)
-            db.session.add(u); db.session.commit()
+            hashed_pw = generate_password_hash(password)
+            mongo_db.users.insert_one({"name": name, "email": email, "role": role, "password": hashed_pw, "created_at": datetime.datetime.utcnow()})
             flash("Account created! Please log in.", "success")
             return redirect(url_for("login"))
     return render_template("auth/register.html")
@@ -550,34 +526,54 @@ def api_predict():
             "suggestions": result.get("suggestions", [])
         }), 422
 
-    # Get disease name from prediction
+    # Normalize healthy labels so the UI and history stay consistent
     disease_name = result.get("disease", "Unknown")
+    status = result.get("status", "unknown")
+    display_disease = disease_name
+    if "healthy" in str(disease_name).lower():
+        status = "healthy"
+        display_disease = "Healthy"
+
     confidence = float(result.get("confidence", 0))
     severity = result.get("severity", "Medium")
     
+    if status == "healthy":
+        health = 100.0
+    else:
+        health = float(result.get("health", 0.0))
+        
     # Get dynamic symptoms, treatment, prevention from knowledge base
-    disease_info = knowledge_base.get_all_info(disease_name)
+    disease_info = knowledge_base.get_all_info(display_disease)
     
     # Save to database
-    pred = Prediction(
-        user_id    = current_user.id,
-        filename   = filename,
-        disease    = disease_name,
-        confidence = confidence,
-        status     = result.get("status", "unknown"),
-        severity   = severity,
-    )
-    db.session.add(pred)
-    db.session.commit()
+    pred_doc = {
+        "user_id": current_user.id,
+        "filename": filename,
+        "disease": disease_name,
+        "confidence": confidence,
+        "status": status,
+        "severity": severity,
+        "timestamp": datetime.datetime.utcnow()
+    }
+    db_res = mongo_db.predictions.insert_one(pred_doc)
+    pred_id = str(db_res.inserted_id)
     
     # Return enriched response
     return jsonify({
         "success": True,
-        "record_id": pred.id,
+        "record_id": pred_id,
         "disease": disease_name,
+        "translated_disease": display_disease,
         "confidence": confidence,
+        "health": health,
+        "diseased": round(100.0 - health, 1),
         "severity": severity,
-        "status": result.get("status", "unknown"),
+        "status": status,
+        "description": result.get("description") or (
+            "The uploaded leaf looks healthy. Continue regular care and monitoring."
+            if status == "healthy"
+            else f"Analysis suggests the presence of {display_disease}. Recommended actions are provided below."
+        ),
         "symptoms": disease_info.get("symptoms", []),
         "treatment": disease_info.get("treatment", []),
         "prevention": disease_info.get("prevention", []),
@@ -586,14 +582,14 @@ def api_predict():
     })
 
 # ── API: AI Chatbot ───────────────────────────────────────────────
-from chatbot import chatbot_reply
+from ai_chatbot import chatbot_reply
 
 @app.route('/api/treatment/<disease_name>')
 @login_required
 def get_treatment(disease_name):
-    treatment = PlantTreatment.query.filter_by(disease_name=disease_name).first()
+    treatment = mongo_db.plant_treatments.find_one({"disease_name": disease_name})
     if treatment:
-        return jsonify(treatment.to_dict())
+        return jsonify(treatment_to_dict(treatment))
     return jsonify({"error": "Treatment not found"}), 404
 
 @app.route('/api/chat', methods=['POST'])
@@ -603,6 +599,8 @@ def chat():
     user_message = data.get("question") or data.get("message")
     disease = data.get("disease", "Unknown")
     lang_code = data.get("lang", 'en')
+    session_id = data.get("session_id") or f"user-{current_user.id}"
+    confidence = data.get("confidence")
 
     # Translate input to English if needed
     eng_input = user_message
@@ -610,7 +608,12 @@ def chat():
         eng_input = safe_translate(user_message, 'en')
         print(f"Chat Translate: {user_message} -> {eng_input}")
 
-    response_text, source, meta = chatbot_reply(eng_input, disease)
+    response_text, source, meta = chatbot_reply(
+        eng_input,
+        disease,
+        session_id=session_id,
+        confidence_score=confidence,
+    )
     
     # Translate reply back to user's language
     final_reply = response_text
@@ -618,26 +621,38 @@ def chat():
         final_reply = safe_translate(response_text, lang_code)
         print(f"Chat Translate Back: {response_text[:30]}... -> {final_reply[:30]}...")
 
+    chat_doc = {
+        "user_id": current_user.id,
+        "disease": disease,
+        "user_query": user_message,
+        "response": final_reply,
+        "confidence": confidence,
+        "source": source,
+        "timestamp": datetime.datetime.utcnow()
+    }
+    mongo_db.chat_messages.insert_one(chat_doc)
+
     return jsonify({
         "response": final_reply,
         "source": source,
-        "meta": meta
+        "meta": meta,
+        "session_id": session_id
     })
 
 @app.route('/api/chat/save', methods=['POST'])
 @login_required
 def save_chat_history():
     data = request.get_json()
-    msg = ChatMessage(
-        user_id=current_user.id,
-        disease=data.get("disease"),
-        user_query=data.get("question") or data.get("message"),
-        response=data.get("response"),
-        confidence=data.get("confidence"),
-        source=data.get("source")
-    )
-    db.session.add(msg)
-    db.session.commit()
+    chat_doc = {
+        "user_id": current_user.id,
+        "disease": data.get("disease"),
+        "user_query": data.get("question") or data.get("message"),
+        "response": data.get("response"),
+        "confidence": data.get("confidence"),
+        "source": data.get("source"),
+        "timestamp": datetime.datetime.utcnow()
+    }
+    mongo_db.chat_messages.insert_one(chat_doc)
     return jsonify({"status": "success"})
 
 @app.route('/api/lang/<lang_code>', methods=['GET'])
@@ -743,34 +758,51 @@ def get_fallback_response(crop, disease, severity, messages):
 @app.route("/api/history")
 @login_required
 def api_history():
-    preds = (Prediction.query.filter_by(user_id=current_user.id)
-             .order_by(Prediction.timestamp.desc()).limit(50).all())
-    return jsonify([p.to_dict() for p in preds])
+    preds = list(mongo_db.predictions.find({"user_id": current_user.id}).sort("timestamp", -1).limit(50))
+    return jsonify([prediction_to_dict(p) for p in preds])
 
-@app.route("/api/history/<int:pid>", methods=["DELETE"])
+@app.route("/api/history/<pid>", methods=["DELETE"])
 @login_required
 def api_delete(pid):
-    pred = Prediction.query.filter_by(id=pid, user_id=current_user.id).first_or_404()
-    db.session.delete(pred); db.session.commit()
+    try:
+        pid_obj = ObjectId(pid)
+    except Exception:
+        abort(404)
+    pred = mongo_db.predictions.find_one({"_id": pid_obj, "user_id": current_user.id})
+    if not pred:
+        abort(404)
+    mongo_db.predictions.delete_one({"_id": pid_obj})
     return jsonify({"ok": True})
 
 @app.route("/api/analytics")
 @login_required
 def api_analytics():
-    preds = Prediction.query.filter_by(user_id=current_user.id).all()
+    preds = list(mongo_db.predictions.find({"user_id": current_user.id}))
     if not preds:
-        return jsonify({"total":0,"healthy":0,"diseased":0,
-                        "disease_counts":{},"daily_counts":{},"avg_confidence":0})
-    healthy  = sum(1 for p in preds if p.status=="healthy")
-    avg_conf = round(sum(p.confidence for p in preds)/len(preds),1)
-    dc, day  = {}, {}
+        return jsonify({
+            "total": 0, "healthy": 0, "diseased": 0,
+            "disease_counts": {}, "daily_counts": {}, "avg_confidence": 0
+        })
+        
+    healthy = sum(1 for p in preds if p.get("status") == "healthy")
+    avg_conf = round(sum(p.get("confidence", 0) for p in preds) / len(preds), 1)
+    
+    dc, day = {}, {}
     for p in preds:
-        dc[p.disease] = dc.get(p.disease,0)+1
-        d = p.timestamp.strftime("%Y-%m-%d")
-        day[d] = day.get(d,0)+1
-    return jsonify({"total":len(preds),"healthy":healthy,"diseased":len(preds)-healthy,
-                    "avg_confidence":avg_conf,"disease_counts":dc,
-                    "daily_counts":dict(sorted(day.items(),reverse=True))})
+        disease = p.get("disease", "Unknown")
+        dc[disease] = dc.get(disease, 0) + 1
+        ts = p.get("timestamp")
+        d = ts.strftime("%Y-%m-%d") if ts else "Unknown"
+        day[d] = day.get(d, 0) + 1
+        
+    return jsonify({
+        "total": len(preds),
+        "healthy": healthy,
+        "diseased": len(preds) - healthy,
+        "avg_confidence": avg_conf,
+        "disease_counts": dc,
+        "daily_counts": dict(sorted(day.items(), reverse=True))
+    })
 
 @app.route("/api/health")
 def api_health():
@@ -782,8 +814,7 @@ def api_health():
     })
 
 # ── Init ──────────────────────────────────────────────────────────
-with app.app_context():
-    db.create_all()
+# MongoDB initialization is handled at global level
 
 if __name__ == "__main__":
     print("\n" + "="*52)

@@ -70,7 +70,7 @@ Open: [http://localhost:5000](http://localhost:5000)
 
 ## Run With Existing Model
 
-If `models/plant_model.h5` exists, the app loads it automatically.
+If `models/combined_plant_disease_model` exists, the app loads it automatically.
 It also loads `models/class_labels.json` for class ordering.
 
 ## Core APIs

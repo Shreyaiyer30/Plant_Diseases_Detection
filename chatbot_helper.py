@@ -1,6 +1,8 @@
 # chatbot_helper.py - Add this at the top if missing
 import os
-import sqlite3
+from pymongo import MongoClient
+from dotenv import load_dotenv
+load_dotenv()
 
 from model_loader import DISEASE_INFO, KAGGLE_MAP, _display_name
 from disease_knowledge import DiseaseKnowledgeBase as _KB
@@ -8,7 +10,11 @@ from disease_knowledge import DiseaseKnowledgeBase as _KB
 _kb = _KB()   # singleton — loads models/knowledge_base.json once
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-DB_PATH = os.path.join(BASE_DIR, "instance", "plantcure.db")
+# DB_PATH = os.path.join(BASE_DIR, "instance", "plantcure.db") # Removed SQLite
+
+# Initialize MongoDB
+mongo_client = MongoClient(os.environ.get("MONGODB_URI", "mongodb://localhost:27017"))
+mongo_db = mongo_client[os.environ.get("MONGODB_DB", "plantcure")]
 
 
 def _normalize_key(value):
@@ -16,26 +22,21 @@ def _normalize_key(value):
 
 
 def _load_db_treatment(disease):
-    if not os.path.exists(DB_PATH):
-        return {}
-
     disease_norm = _normalize_key(disease)
     try:
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        rows = conn.execute("SELECT * FROM plant_treatments").fetchall()
-        conn.close()
+        # In MongoDB, we can just search for the disease_name
+        # But to match the original logic, we might need a more flexible search
+        rows = list(mongo_db.plant_treatments.find({}))
     except Exception:
         return {}
 
     for row in rows:
-        row_dict = dict(row)
-        stored_name = row_dict.get("disease_name", "")
+        stored_name = row.get("disease_name", "")
         if _normalize_key(stored_name) == disease_norm:
-            return row_dict
+            return row
         display_name = _display_name(stored_name)
         if _normalize_key(display_name) == disease_norm:
-            return row_dict
+            return row
     return {}
 
 

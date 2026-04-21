@@ -876,8 +876,10 @@ function showResult(data) {
     badgeSeverity.textContent = `Severity: ${data.severity || "Normal"}`;
   }
 
-  // Update horizontal confidence bar
-  const conf = parseFloat(data.confidence) || 0;
+  // Use normalized plant health for the top bar, not raw model confidence.
+  const conf = Number.isFinite(data.health)
+    ? Number(data.health)
+    : (healthy ? 100 : (parseFloat(data.confidence) || 0));
   if (ringFg) {
     ringFg.style.width = conf + "%";
     // Color logic

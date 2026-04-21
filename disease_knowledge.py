@@ -7,6 +7,7 @@ default only if the file is missing or corrupt.
 """
 import json
 import os
+import re
 
 # Always resolve relative to this file's location, not CWD
 _BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -46,7 +47,10 @@ class DiseaseKnowledgeBase:
     # ------------------------------------------------------------------
     def _normalize(self, name: str) -> str:
         """Case-insensitive, whitespace-tolerant key lookup."""
-        return name.strip().lower()
+        cleaned = (name or "").strip().lower()
+        cleaned = cleaned.replace("___", " ").replace("__", " ").replace("_", " ")
+        cleaned = re.sub(r"[^a-z0-9]+", " ", cleaned)
+        return re.sub(r"\s+", " ", cleaned).strip()
 
     def _find(self, disease_name: str) -> dict:
         """Try exact match first, then case-insensitive match."""

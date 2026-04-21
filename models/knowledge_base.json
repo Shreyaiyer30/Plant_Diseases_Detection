@@ -213,24 +213,137 @@
       "Propiconazole"
     ]
   },
-  "Apple___healthy": {"symptoms":["Healthy green leaves"],"treatment":["Regular care"],"prevention":["Monitor"],"organic_remedies":["None"],"chemical_remedies":["None"]},
-  "Blueberry___healthy": {"symptoms":["Healthy green leaves"],"treatment":["Regular care"],"prevention":["Monitor"],"organic_remedies":["None"],"chemical_remedies":["None"]},
-  "Cherry_(including_sour)___healthy": {"symptoms":["Healthy green leaves"],"treatment":["Regular care"],"prevention":["Monitor"],"organic_remedies":["None"],"chemical_remedies":["None"]},
-  "Corn_(maize)___healthy": {"symptoms":["Healthy green leaves"],"treatment":["Regular care"],"prevention":["Monitor"],"organic_remedies":["None"],"chemical_remedies":["None"]},
-  "Pepper__bell___healthy": {"symptoms":["Healthy green leaves"],"treatment":["Regular care"],"prevention":["Monitor"],"organic_remedies":["None"],"chemical_remedies":["None"]},
+  "Apple___healthy": {
+    "symptoms": [
+      "Healthy green leaves"
+    ],
+    "treatment": [
+      "Regular care"
+    ],
+    "prevention": [
+      "Monitor"
+    ],
+    "organic_remedies": [
+      "None"
+    ],
+    "chemical_remedies": [
+      "None"
+    ]
+  },
+  "Blueberry___healthy": {
+    "symptoms": [
+      "Healthy green leaves"
+    ],
+    "treatment": [
+      "Regular care"
+    ],
+    "prevention": [
+      "Monitor"
+    ],
+    "organic_remedies": [
+      "None"
+    ],
+    "chemical_remedies": [
+      "None"
+    ]
+  },
+  "Cherry_(including_sour)___healthy": {
+    "symptoms": [
+      "Healthy green leaves"
+    ],
+    "treatment": [
+      "Regular care"
+    ],
+    "prevention": [
+      "Monitor"
+    ],
+    "organic_remedies": [
+      "None"
+    ],
+    "chemical_remedies": [
+      "None"
+    ]
+  },
+  "Corn_(maize)___healthy": {
+    "symptoms": [
+      "Healthy green leaves"
+    ],
+    "treatment": [
+      "Regular care"
+    ],
+    "prevention": [
+      "Monitor"
+    ],
+    "organic_remedies": [
+      "None"
+    ],
+    "chemical_remedies": [
+      "None"
+    ]
+  },
+  "Pepper__bell___healthy": {
+    "symptoms": [
+      "Healthy green leaves"
+    ],
+    "treatment": [
+      "Regular care"
+    ],
+    "prevention": [
+      "Monitor"
+    ],
+    "organic_remedies": [
+      "None"
+    ],
+    "chemical_remedies": [
+      "None"
+    ]
+  },
   "Pepper__bell___Bacterial_spot": {
-    "symptoms": ["Small yellow-green spots on young leaves", "Dark water-soaked spots on older leaves", "Spots with straw-colored centers"],
-    "treatment": ["Copper-based bactericide", "Remove infected foliage", "Avoid overhead watering"],
-    "prevention": ["Use disease-free seeds", "Crop rotation", "Control weeds"],
-    "organic_remedies": ["Copper hydroxide", "Streptomycin (biological)"],
-    "chemical_remedies": ["Copper Oxychloride 50 WP", "Mancozeb"]
+    "symptoms": [
+      "Small yellow-green spots on young leaves",
+      "Dark water-soaked spots on older leaves",
+      "Spots with straw-colored centers"
+    ],
+    "treatment": [
+      "Copper-based bactericide",
+      "Remove infected foliage",
+      "Avoid overhead watering"
+    ],
+    "prevention": [
+      "Use disease-free seeds",
+      "Crop rotation",
+      "Control weeds"
+    ],
+    "organic_remedies": [
+      "Copper hydroxide",
+      "Streptomycin (biological)"
+    ],
+    "chemical_remedies": [
+      "Copper Oxychloride 50 WP",
+      "Mancozeb"
+    ]
   },
   "Corn_(maize)___Common_rust_": {
-    "symptoms": ["Small brown pustules on both leaf surfaces", "Pustules become powdery and reddish-brown", "Leaves turn yellow and die early"],
-    "treatment": ["Apply fungicide at first sign", "Increase spacing"],
-    "prevention": ["Plant resistant hybrids", "Plant early to avoid late-season humidity"],
-    "organic_remedies": ["Sulfur spray"],
-    "chemical_remedies": ["Azoxystrobin", "Propiconazole"]
+    "symptoms": [
+      "Small brown pustules on both leaf surfaces",
+      "Pustules become powdery and reddish-brown",
+      "Leaves turn yellow and die early"
+    ],
+    "treatment": [
+      "Apply fungicide at first sign",
+      "Increase spacing"
+    ],
+    "prevention": [
+      "Plant resistant hybrids",
+      "Plant early to avoid late-season humidity"
+    ],
+    "organic_remedies": [
+      "Sulfur spray"
+    ],
+    "chemical_remedies": [
+      "Azoxystrobin",
+      "Propiconazole"
+    ]
   },
   "Gray Leaf Spot": {
     "symptoms": [
@@ -279,6 +392,162 @@
     "chemical_remedies": [
       "Azoxystrobin",
       "Pyraclostrobin"
+    ]
+  },
+  "Potato___Early_blight": {
+    "symptoms": [
+      "Dark brown target-like ring spots",
+      "Yellowing around lesions",
+      "Premature defoliation"
+    ],
+    "treatment": [
+      "Apply Mancozeb or Azoxystrobin",
+      "Remove infected debris",
+      "Balance nitrogen fertilization"
+    ],
+    "prevention": [
+      "Use certified seed potatoes",
+      "Crop rotation",
+      "Maintain adequate plant spacing"
+    ],
+    "organic_remedies": [
+      "Neem oil spray",
+      "Remove heavily infected leaves"
+    ],
+    "chemical_remedies": [
+      "Mancozeb 75 WP",
+      "Azoxystrobin"
+    ]
+  },
+  "Potato___Late_blight": {
+    "symptoms": [
+      "Dark water-soaked leaf patches",
+      "White sporulation on undersides",
+      "Rapid tuber brown rot"
+    ],
+    "treatment": [
+      "Apply Metalaxyl + Mancozeb immediately",
+      "Destroy infected haulm",
+      "Harvest promptly in dry conditions"
+    ],
+    "prevention": [
+      "Plant resistant varieties",
+      "Apply preventive fungicide",
+      "Avoid irrigation in cloudy weather"
+    ],
+    "organic_remedies": [
+      "Copper-based sprays",
+      "Complete removal of infected plants"
+    ],
+    "chemical_remedies": [
+      "Metalaxyl 8% + Mancozeb 64%",
+      "Cymoxanil + Mancozeb"
+    ]
+  },
+  "Potato___healthy": {
+    "symptoms": [
+      "Healthy green leaves"
+    ],
+    "treatment": [
+      "Regular care"
+    ],
+    "prevention": [
+      "Monitor"
+    ],
+    "organic_remedies": [
+      "None"
+    ],
+    "chemical_remedies": [
+      "None"
+    ]
+  },
+  "Grape___Black_rot": {
+    "symptoms": [
+      "Circular tan lesions with dark borders",
+      "Black mummified fruit",
+      "Black pycnidia in lesions"
+    ],
+    "treatment": [
+      "Apply Myclobutanil or Mancozeb",
+      "Remove mummified fruit",
+      "Prune infected canes"
+    ],
+    "prevention": [
+      "Maintain open vine canopy",
+      "Apply fungicide from bud break",
+      "Remove crop debris after harvest"
+    ],
+    "organic_remedies": [
+      "Copper spray",
+      "Remove mummies"
+    ],
+    "chemical_remedies": [
+      "Myclobutanil 10 WP",
+      "Mancozeb 75 WP"
+    ]
+  },
+  "Grape___Leaf_blight_(Isariopsis_Leaf_Spot)": {
+    "symptoms": [
+      "Dark brown irregular spots",
+      "Premature leaf drop",
+      "Reduced fruit quality"
+    ],
+    "treatment": [
+      "Apply copper-based or Zineb fungicide",
+      "Remove infected leaves",
+      "Improve canopy management"
+    ],
+    "prevention": [
+      "Good vine spacing and pruning",
+      "Avoid wetting foliage",
+      "Apply preventive fungicide spray"
+    ],
+    "organic_remedies": [
+      "Copper hydroxide",
+      "Proper pruning"
+    ],
+    "chemical_remedies": [
+      "Zineb",
+      "Copper-based fungicides"
+    ]
+  },
+  "Grape___Esca_(Black_Measles)": {
+    "symptoms": [
+      "Tiger-stripe pattern on leaves",
+      "Dark red/yellow borders on lesions",
+      "Black spots on berries"
+    ],
+    "treatment": [
+      "Prune out infected wood",
+      "Protect pruning wounds"
+    ],
+    "prevention": [
+      "Delay pruning until late winter",
+      "Apply wound protectants"
+    ],
+    "organic_remedies": [
+      "Sanitize tools",
+      "Remove infected vines"
+    ],
+    "chemical_remedies": [
+      "Wound sealants with fungicide"
+    ]
+  },
+  "Grape___healthy": {
+    "symptoms": [
+      "Healthy green vines"
+    ],
+    "treatment": [
+      "Regular care"
+    ],
+    "prevention": [
+      "Monitor"
+    ],
+    "organic_remedies": [
+      "None"
+    ],
+    "chemical_remedies": [
+      "None"
     ]
   }
 }

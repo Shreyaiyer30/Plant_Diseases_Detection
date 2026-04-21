@@ -185,21 +185,25 @@ def _get_info(name: str) -> dict:
     if name in DISEASE_INFO:
         return DISEASE_INFO[name]
     mapped = KAGGLE_MAP.get(name)
-    if mapped:
-        return DISEASE_INFO.get(mapped, {})
+    if mapped and mapped in DISEASE_INFO:
+        return DISEASE_INFO[mapped]
     cn = _canon(name)
     for k in DISEASE_INFO.keys():
         if _canon(k) == cn:
             return DISEASE_INFO[k]
     for k, v in KAGGLE_MAP.items():
-        if _canon(k) == cn:
-            return DISEASE_INFO.get(v, {})
+        if _canon(k) == cn and v in DISEASE_INFO:
+            return DISEASE_INFO[v]
+            
+    # Default fallback - determine if it's healthy from the name
+    is_healthy = "healthy" in cn or "healthy" in name.lower()
     return {
-        "status": "diseased", "severity": "Unknown",
-        "description": f"Detected: {name.replace('___',' - ').replace('_',' ')}. Consult an agricultural expert.",
-        "symptoms"  : ["Visible abnormalities on leaf"],
-        "treatment" : ["Consult local agricultural officer"],
-        "prevention": ["Monitor crop regularly"],
+        "status": "healthy" if is_healthy else "diseased",
+        "severity": "None" if is_healthy else "Unknown",
+        "description": f"Detected: {name.replace('___',' - ').replace('_',' ')}." if is_healthy else f"Detected: {name.replace('___',' - ').replace('_',' ')}. Consult an agricultural expert.",
+        "symptoms"  : ["No issues detected."] if is_healthy else ["Visible abnormalities on leaf"],
+        "treatment" : ["Maintain regular watering and care."] if is_healthy else ["Consult local agricultural officer"],
+        "prevention": ["Monitor crop regularly."] if is_healthy else ["Monitor crop regularly"],
     }
 
 def _display_name(label: str) -> str:
@@ -245,7 +249,7 @@ def _build_result_summary(crop: str, disease_name: str, info: dict) -> tuple[str
     return summary, details
 
 class PlantDiseaseModel:
-    def __init__(self, model_path='models/plant_model.h5', labels_path='models/class_labels.json'):
+    def __init__(self, model_path='models/plant_disease_model.h5', labels_path='models/class_labels.json'):
         self.model = None
         self.class_labels = []
         # Resolve paths relative to this file's directory
@@ -266,7 +270,7 @@ class PlantDiseaseModel:
             labels_path = os.path.join(_this_dir, labels_path)
 
         # Preferred model paths
-        _alt_model_path = os.path.join(_this_dir, "models", "plant_model.h5")
+        _alt_model_path = os.path.join(_this_dir, "models", "combined_plant_disease_model")
         
         def _try_load(path, name):
             if os.path.exists(path):
@@ -467,9 +471,22 @@ class PlantDiseaseModel:
     
     def test_time_augmentation(self, image):
         """Perform TTA — input size read from self.img_size (auto-detected from model)"""
-        sz = self.img_size  # e.g. 128 or 224 depending on what was trained
-        processed_orig = cv2.resize(image, (sz, sz))
+        # --- Image Preprocessing Pipeline (Section 5.5) ---
+        # 1. Resize to 224x224 (as defined in the report)
+        report_sz = 224 
+        processed_orig = cv2.resize(image, (report_sz, report_sz))
+        
+        # 2. Gaussian Blur to reduce high frequency noise
+        processed_orig = cv2.GaussianBlur(processed_orig, (3, 3), 0)
+        
+        # 3. Normalize to [0, 1] range
         processed_orig = processed_orig.astype('float32') / 255.0
+        # ---------------------------------------------------
+        
+        # Downscale to match current model's strict tensor input if needed
+        # (Preserves the 224x224 blur and normalization properties)
+        if self.img_size != report_sz:
+            processed_orig = cv2.resize(processed_orig, (self.img_size, self.img_size))
         
         # Logically different versions: Flip, Rotate, Brightness adjust
         augmented = [np.expand_dims(processed_orig, axis=0)]
@@ -568,8 +585,10 @@ class PlantDiseaseModel:
             if top1_conf > 0.95 and is_valid and len(issues) == 0:
                 pass
 
-            # 70% Confidence Threshold Gate (Fix 6 fallback)
-            CONFIDENCE_THRESHOLD = 0.70
+            # Confidence Threshold Gate
+            # Healthy plants require only 40% confidence, diseases require 70%
+            is_healthy_pred = info.get("status", "diseased") == "healthy"
+            CONFIDENCE_THRESHOLD = 0.40 if is_healthy_pred else 0.70
             
             if top1_conf < CONFIDENCE_THRESHOLD:
                 return {
@@ -605,7 +624,7 @@ class PlantDiseaseModel:
             
             # Health Calculation (Fix 4 requirement - Severity based logic)
             if status == "healthy":
-                health_score = round(top1_conf * 100, 1)
+                health_score = 100.0
             elif status in ['uncertain', 'invalid']:
                 health_score = 0
             else:

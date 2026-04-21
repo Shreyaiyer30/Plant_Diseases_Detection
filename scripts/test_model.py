@@ -13,7 +13,7 @@ from tensorflow.keras.preprocessing import image
 # CONFIGURATION - UPDATE THESE PATHS
 # ============================================================
 
-MODEL_PATH = "models/plant_model.h5"
+MODEL_PATH = "models/combined_plant_disease_model"
 LABELS_PATH = "models/class_labels.json"
 
 # ============================================================
