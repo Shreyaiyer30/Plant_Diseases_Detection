@@ -1,41 +1,26 @@
+import os
 import sys
-from pathlib import Path
+import io
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-if str(PROJECT_ROOT) not in sys.path:
-    sys.path.insert(0, str(PROJECT_ROOT))
+# Fix for Windows terminal UTF-8 output
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
+# setup dummy env vars
+os.environ["MONGODB_URI"] = "mongodb://localhost:27017"
 
-from ai_chatbot import PlantChatbot
+from ai_chatbot import get_bot_reply
 
+questions = [
+    ("How to treat early blight?", "Early Blight"),
+    ("Organic remedy for powdery mildew?", "Powdery Mildew"),
+    ("Prevention tips for rust?", "Rust")
+]
 
-def run_demo():
-    bot = PlantChatbot()
-    session_id = "demo-session"
-    test_cases = [
-        ("How to treat this disease?", "Rust"),
-        ("Organic remedies please", "Powdery Mildew"),
-        ("How to prevent this from coming back?", "Blight"),
-        ("What are the symptoms I should look for?", "Unknown"),
-        ("Monsoon me kya care karni chahiye?", "Tomato Early Blight"),
-    ]
+for q, disease in questions:
+    print(f"\n--- Question: {q} (Disease Context: {disease}) ---")
+    try:
+        reply = get_bot_reply(q, disease=disease)
+        print("Reply:", reply)
+    except Exception as e:
+        print("Error:", e)
 
-    for question, disease in test_cases:
-        response, source, meta = bot.get_response(
-            user_message=question,
-            disease=disease,
-            session_id=session_id,
-            confidence_score=0.945,
-        )
-        print("=" * 80)
-        print(f"Disease : {disease}")
-        print(f"Question: {question}")
-        print(f"Source  : {source}")
-        print(f"Intent  : {meta.get('intent')}")
-        print(f"Reply   : {response}")
-
-
-if __name__ == "__main__":
-    run_demo()

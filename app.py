@@ -683,6 +683,14 @@ def save_chat_history():
     mongo_db.chat_messages.insert_one(chat_doc)
     return jsonify({"status": "success"})
 
+@app.route('/api/chat/clear', methods=['POST'])
+@login_required
+def clear_chat():
+    data = request.get_json() or {}
+    session_id = data.get("session_id") or f"user-{current_user.id}"
+    get_chatbot().clear_session_history(session_id)
+    return jsonify({"status": "success", "message": "Chat history cleared"})
+
 @app.route('/api/lang/<lang_code>', methods=['GET'])
 def get_language_pack(lang_code):
     return jsonify(load_lang_json(lang_code))

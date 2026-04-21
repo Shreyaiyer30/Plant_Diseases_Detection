@@ -1,104 +1,80 @@
-# 🌿 PlantCure: User Guide & Implementation Walkthrough
+Comprehensive Guide: Training, Testing, and Chatbot Setup
+This guide provides the necessary commands and steps to manage the PlantCure AI model, install dependencies, and configure the multilingual chatbot.
 
-Welcome to **PlantCure v3**. This guide covers how to get the most accurate results from the AI and provides a technical breakdown of the system implementation.
+📋 1. Requirements & Package Installation
+To run the system, you need Python 3.11+. It is highly recommended to use a virtual environment to avoid package conflicts.
 
----
+Initial Setup (One-time)
+powershell
+# Create a virtual environment
+python -m venv .venv
+# Activate the virtual environment
+# Windows:
+.\.venv\Scripts\Activate.ps1
+# Mac/Linux:
+source .venv/bin/activate
+# Install essential dependencies
+pip install -r requirements.txt
+# Install additional AI & Database packages
+pip install groq pymongo gdown googletrans==4.0.0rc1
+Package Checklist
+AI/ML: tensorflow==2.15.0, keras==2.15.0, opencv-python, numpy, gdown pipreqs
+Backend: Flask, Flask-Login, flask-sqlalchemy, python-dotenv
+Chatbot & Translation: 
 
-## 📖 User Guide: How to Get Accurate Results
+groq
+, googletrans, pymongo (for chat history)
+🏋️ 2. Training the Model
+If you have added new data or want to improve accuracy, you can retraining the CNN model.
 
-To ensure the AI identifies your plant diseases correctly, follow these specific steps:
+Command:
 
-### 📸 1. Selecting the Right Image
-The model is trained on the **PlantVillage** dataset. For the highest accuracy:
-*   **Recommended Source**: Navigate to your local `plantvillage` dataset folder.
-*   **Step**: Select a crop folder (e.g., `Tomato___Early_blight`) and choose any `.jpg` image from it.
-*   **Why?**: These images are standardized, which the model recognizes perfectly.
+powershell
+python scripts/train_model.py --dataset data/PlantVillage --epochs 10 --batch 64 --img-size 128
+--dataset: Path to your image folders (ensure data/PlantVillage exists).
+--epochs: Number of training rounds (use 10–20 for a balance of speed and accuracy).
+--img-size: Resolution (128x128 is optimized for standard hardware).
+Result: The trained model will be saved to models/combined_plant_disease_model.
+🧪 3. Testing the Model
+You can verify the model's accuracy on individual images without starting the full web server.
 
-### 🔍 2. Using External (Google) Images
-If you are using images found on the internet:
-*   **Background**: Ensure the background is **clear and solid** (preferably black, white, or neutral). Busy backgrounds (other plants, hands, or dirt) can confuse the model.
-*   **Quality**: The image must be clear, sharp, and focused on a **single leaf**.
-*   **Lighting**: Ensure the leaf is well-lit without harsh shadows or glares.
+Interactive Mode (Asks for path)
+powershell
+python scripts/test_model.py
+Direct Command (Test a specific file)
+powershell
+python scripts/test_model.py --image path/to/leaf_image.jpg
+🤖 4. Chatbot Configuration
+The PlantCure chatbot is a context-aware assistant that provides treatment advice.
 
-### 🚀 3. Analysis Process
-1.  **Browse**: Click "Browse file" or drag an image into the drop zone.
-2.  **Verify**: Look at the large preview. If the leaf is blurry, click **Try Again**.
-3.  **Analyse**: Click **Analyse Plant**.
-4.  **Review**: If confidence is low (below 70%), check the **Low Confidence Warning** box for specific issues and retry with a better photo.
+How it works:
+Groq AI: Uses High-speed Llama-3 models for human-like conversation.
+Local Knowledge Base: If API is down, it uses disease_knowledge.py to provide verified remedies.
+Multilingual: Automatically detects if you are using Hindi or Marathi and translates responses.
+Setting up the Chatbot API:
+Go to Groq Console and get a free API Key.
+Open your .env file and add:
+text
+GROQ_API_KEY=your_key_here
+GEMINI_API_KEY=your_key_here  # Fallback
+🚀 5. Running the Application
+Once everything is installed and your .env is configured:
 
----
+powershell
+python app.py
+Open http://localhost:5000 in your browser to start diagnosing plants.
 
-## 🛠️ Step-by-Step Implementation Guide
+🌐 6. Google Drive Model Access
+The system can automatically download the model from Google Drive if it's missing.
+1. Open `model_loader.py`.
+2. Locate the `GD_MODEL_ID` variable at the top.
+3. Replace the placeholder with your actual Google Drive File ID.
+   * Example: If your link is `drive.google.com/file/d/1ABC-123/view`, the ID is `1ABC-123`.
+4. The system will download the model to `models/combined_plant_model_final.h5` upon first run.
 
-The following steps were taken to build and stabilize the current version of PlantCure:
-
-### Phase 1: Model Stabilization
-1.  **H5 Model Patching**: Created `scripts/fix_model.py` to translate newer Keras 3 configurations (like `batch_shape`) into the older `batch_input_shape` format compatible with TensorFlow 2.15.
-2.  **Label Synchronization**: Synchronized `class_labels.json` with the model's actual output layers and mapped them to the `KAGGLE_MAP` in `model_loader.py`.
-
-### Phase 2: Enhanced Prediction Engine
-1.  **Test-Time Augmentation (TTA)**: Implemented in `model_loader.py`. The system now creates 3 variants of your uploaded image (flipped, rotated, brightened) and averages the predictions for higher stability.
-2.  **Bias Correction Layer**: Added logic to detect "Pepper" bias. If the model incorrectly predicts Pepper but sees a secondary match for the actual crop (e.g., Apple), it automatically pivots to the correct result.
-3.  **Confidence Gate**: Implemented a 70% threshold. Predictions below this are flagged as "Uncertain" to prevent providing incorrect treatment advice.
-
-### Phase 3: Single Page Architecture (SPA)
-1.  **Unified Routing**: Refactored `app.py` to route `/dashboard`, `/detect`, `/history`, and `/analytics` to a single `main_spa.html` file.
-2.  **View Management**: Implemented a JavaScript `switchView` system to swap content blocks without page reloads, fixing all previous 404 errors.
-
-### Phase 4: UI/UX & Camera Integration
-1.  **Native Camera**: Integrated the MediaDevices API to allow in-browser photo capture with a dedicated fullscreen overlay.
-2.  **Contextual Chat**: 
-    -   Integrated `DiseaseKnowledgeBase` into the Chatbot.
-    -   Implemented "Chat Memory" so the assistant knows about the last scanned result even if the user asks a general question like "How do I treat it?".
-3.  **Uncertainty UI**: Added specialized warning blocks that display "Issues Detected" and "Suggestions to improve" based on real-time AI feedback.
-
-### Phase 5: Knowledge Base & Chatbot
-1.  **Rich KB Integration**: Mapped the detection results to a localized `knowledge_base.json` containing symptoms, prevention, organic remedies, and chemical treatments.
-2.  **API Fallback**: Configured the chatbot to use local rules if the Gemini AI API is unavailable, ensuring the user always gets a response.
-
----
-
-**Note**: To run the application, ensure your virtual environment is active and run `python app.py`. Access the dashboard at `http://localhost:5000`.
-
-**Note**: To add GEMINI_API_KEY its free of cost upto 15 request.
-
-**Note for .env file**: 
-1. Create a .env file in the root directory of the project.
-2. Add the following lines to the .env file:
-   GEMINI_API_KEY=your_gemini_api_key_here
-   FLASK_SECRET_KEY=your_random_secret_key_here
-3. Replace the placeholder values with your actual values.
-4. Run the application using `python app.py`.
-**Setup for .env file**:
-1. Set Flask SECRET_KEY:
-1: Create .env file in your project root
-SECRET_KEY=your_random_secret_key_here
-GEMINI_API_KEY=your_gemini_api_key_here
-2: Install dotenv
-pip install python-dotenv
-3: Load in Flask (app.py)
-from dotenv import load_dotenv
-import os
-load_dotenv()
-
-app.secret_key = os.getenv("SECRET_KEY")
-2. Set Gemini API Key
-link: https://console.groq.com/
-1: Get API key from Groq
-2: Load it in your code
-GEMINI_API_KEY = os.getenv("GROQ_API_KEY")
-3: Use it (example)
-!pip install groq
-
-# Code
-from groq import Groq
-client = Groq(api_key="YOUR_FREE_KEY")
-response = client.chat.completions.create(
-    model="llama3-8b-8192",  # Free model
-    messages=[
-        {"role": "user", "content": "How to treat powdery mildew?"}
-    ]
-)
-print(response.choices[0].message.content)
-For Flask api key
-python -c "import secrets; print(secrets.token_hex(32))"
+Work Summary
+Analyzed the codebase to identify the exact training and testing scripts.
+Verified the data/ directory structure for compatibility with training commands.
+Extracted dependency requirements from requirements.txt and source code imports.
+Documented the Chatbot logic, including its Groq AI integration and local fallback system.
+Created a clear, step-by-step guide for installation, training, and testing.

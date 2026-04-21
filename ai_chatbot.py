@@ -166,6 +166,13 @@ class PlantChatbot:
         self.cache.set(cache_key, (response_text, source, meta))
         return response_text, source, meta
 
+    def clear_session_history(self, session_id: str) -> None:
+        with self._lock:
+            if session_id in self.session_history:
+                self.session_history.pop(session_id)
+            if session_id in self.request_log:
+                self.request_log.pop(session_id)
+
     def _resolve_disease_name(self, disease: str) -> str:
         label = (disease or "Unknown").strip()
         lowered = label.lower()
@@ -354,11 +361,13 @@ class PlantChatbot:
         if intent == "prevention":
             return self._list_response("🛡️ Prevention", disease, kb_info.get("prevention", []), "Regular spacing, leaf hygiene, and controlled watering help stop repeat infection.", include_suggestions=True)
         if intent == "organic":
-            remedies = list(kb_info.get("organic_remedies", [])) or [
-                "Neem oil spray",
-                "Buttermilk spray",
-                "Diluted cow urine solution",
-            ]
+            remedies = list(kb_info.get("organic_remedies", []))
+            if not remedies or "not available" in remedies[0].lower():
+                 remedies = self.knowledge_base.data.get("PlantCare", {}).get("organic_practices", [])
+            
+            if not remedies:
+                remedies = ["Neem oil spray", "Buttermilk spray", "Diluted cow urine solution"]
+                
             return self._list_response("🌱 Organic remedies", disease, remedies, "Test on a few leaves first before full spraying.", include_suggestions=True)
         if intent == "chemical":
             chemicals = self._with_cost_hints(kb_info.get("chemical_remedies", []))
@@ -366,10 +375,21 @@ class PlantChatbot:
         if intent == "symptoms":
             return self._list_response("🔍 Symptoms", disease, kb_info.get("symptoms", []), "If the disease is spreading fast, contact a local agricultural officer or KVK.", include_suggestions=True)
         if intent == "care":
-            return (
-                f"🌱 For {disease}, water at soil level, keep plants well spaced, and remove infected debris quickly. "
-                "During monsoon, avoid leaving leaves wet for long hours."
-            )
+            care_info = self.knowledge_base.data.get("PlantCare", {})
+            if any(w in user_message.lower() for w in ["water", "irrigation"]):
+                items = care_info.get("watering", [])
+            elif any(w in user_message.lower() for w in ["fertiliz", "manure", "npk"]):
+                items = care_info.get("fertilizer", [])
+            elif any(w in user_message.lower() for w in ["sun", "light"]):
+                items = care_info.get("sunlight", [])
+            elif any(w in user_message.lower() for w in ["monsoon", "rain"]):
+                items = care_info.get("monsoon_care", [])
+            else:
+                return (
+                    f"🌱 For {disease}, water at soil level, keep plants well spaced, and remove infected debris quickly. "
+                    "In general, ensure 6-8 hours of sunlight and use well-drained soil."
+                )
+            return f"🌱 Plant Care Tip: {', '.join(items[:2])}. Always monitor your plants daily."
         if intent == "explain":
             symptoms = ", ".join(kb_info.get("symptoms", [])[:3]) or "visible leaf damage"
             prevention = ", ".join(kb_info.get("prevention", [])[:2]) or "clean field management"
