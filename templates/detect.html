@@ -1,0 +1,740 @@
+{% extends "base.html" %}
+
+{% block title %}Detect Disease — PlantCure{% endblock %}
+{% block page_title %}Disease Detection{% endblock %}
+
+{% block head %}
+<style>
+    /* Page specific styles */
+    .res-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 24px; }
+    .res-blk { background: var(--n0); padding: 16px; border-radius: 12px; border: 1px solid var(--n2); }
+    .res-blk h5 { font-size: 11px; text-transform: uppercase; color: var(--n5); margin-bottom: 12px; letter-spacing: 0.05em; border-bottom: 1px solid var(--n2); padding-bottom: 8px; }
+    .res-list { list-style: none; padding: 0; }
+    .res-list li { font-size: 13px; color: var(--n7); margin-bottom: 8px; padding-left: 14px; position: relative; }
+    .res-list li::before { content: "•"; position: absolute; left: 0; color: var(--g6); font-weight: bold; }
+    
+    /* Advanced Camera Modal Styles */
+    .camera-modal {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.95);
+        z-index: 3000; display: none; align-items: center; justify-content: center;
+        padding: 16px; backdrop-filter: blur(10px);
+    }
+    
+    /* Result Badges */
+    .status-badge {
+        padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: 700;
+        text-transform: uppercase; letter-spacing: 0.05em; display: inline-block;
+    }
+    .status-healthy { background: #dcfce7; color: #166534; }
+    .status-diseased { background: #fee2e2; color: #991b1b; }
+    .status-uncertain { background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; }
+    .status-invalid { background: #f1f5f9; color: #475569; }
+    .camera-modal.active { display: flex; }
+    .camera-box { 
+        width: 100%; max-width: 500px; background: #000; border-radius: 24px; 
+        overflow: hidden; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .video-preview { width: 100%; aspect-ratio: 3/4; object-fit: cover; background: #000; }
+    
+    .cam-header {
+        position: absolute; top: 0; left: 0; right: 0; padding: 15px 20px;
+        background: linear-gradient(rgba(0,0,0,0.7), transparent);
+        display: flex; justify-content: space-between; align-items: flex-start; z-index: 10;
+    }
+    .cam-status-pill {
+        background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+        padding: 4px 12px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2);
+    }
+    .status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #22c55e; margin-right: 6px; }
+    .cam-status-txt { color: #fff; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .cam-quality-box {
+        position: absolute; bottom: 100px; left: 20px; right: 20px;
+        background: rgba(0,0,0,0.6); backdrop-filter: blur(10px);
+        padding: 12px 16px; border-radius: 16px; z-index: 10;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+    .q-hdr { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .q-title { color: rgba(255,255,255,0.7); font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .q-val { color: #fff; font-size: 10px; font-weight: 700; }
+    .q-bar-track { height: 6px; background: rgba(255,255,255,0.1); border-radius: 10px; overflow: hidden; }
+    .q-bar-fill { height: 100%; width: 0%; background: #22c55e; transition: width 0.3s, background 0.3s; }
+    
+    .cam-controls {
+        padding: 20px; background: #000;
+        display: flex; justify-content: space-around; align-items: center; position: relative;
+    }
+    .snap-btn {
+        width: 72px; height: 72px; border-radius: 50%; border: 4px solid #fff;
+        background: transparent; cursor: pointer; position: relative;
+        transition: transform 0.2s;
+    }
+    .snap-btn::after {
+        content: ""; position: absolute; inset: 6px; background: #fff; border-radius: 50%;
+    }
+    .snap-btn:active { transform: scale(0.92); }
+    .snap-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    
+    .ctrl-btn {
+        width: 44px; height: 44px; border-radius: 50%; background: rgba(255,255,255,0.1);
+        border: none; color: #fff; display: flex; align-items: center; justify-content: center;
+        font-size: 18px; cursor: pointer; transition: background 0.2s;
+    }
+    .ctrl-btn:hover { background: rgba(255,255,255,0.2); }
+    .ctrl-btn.active { background: var(--a5); color: #000; }
+
+    .countdown-overlay {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        color: #fff; font-size: 120px; font-weight: 900; font-family: var(--font-head);
+        background: rgba(0,0,0,0.3); z-index: 20; pointer-events: none;
+        text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    
+    .cam-guides { position: absolute; inset: 40px; pointer-events: none; z-index: 5; }
+    .guide { position: absolute; width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.3); }
+    .guide-tl { top: 0; left: 0; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
+    .guide-tr { top: 0; right: 0; border-left: 0; border-bottom: 0; border-radius: 0 12px 0 0; }
+    .guide-bl { bottom: 0; left: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 12px; }
+    .guide-br { bottom: 0; right: 0; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
+
+    .cam-tip-popup {
+        position: absolute; top: 80px; left: 50%; transform: translateX(-50%);
+        background: rgba(0,0,0,0.7); color: #fff; padding: 8px 16px; border-radius: 20px;
+        font-size: 11px; white-space: nowrap; transition: opacity 0.3s; z-index: 10;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detect-layout">
+    <!-- UPLOAD CARD -->
+    <div class="card" id="upload-card">
+        <div class="card-hdr">
+            <h3 id="detect-h1">📷 Leaf Diagnosis</h3>
+        </div>
+        
+        <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+            <input type="file" id="fileInput" accept="image/*" hidden/>
+            <div class="drop-ico-tile">🍃</div>
+            <p class="drop-title">Upload a photo of the affected leaf</p>
+            <p class="drop-sub" id="detect-sub">Higher quality images lead to better results</p>
+            <div class="drop-btns" onclick="event.stopPropagation()">
+                <button class="btn-primary" id="browseBtn" onclick="document.getElementById('fileInput').click()">📁 Browse File</button>
+                <button class="btn-outline" id="cameraBtn" onclick="openCamera()">📸 Use Camera</button>
+            </div>
+            <p class="drop-hint">Supports PNG, JPG, WEBP (Max 10MB)</p>
+        </div>
+
+        <!-- Preview -->
+        <div class="preview-zone hidden" id="previewZone">
+            <img id="previewImg" src="" alt="Preview" class="preview-img"/>
+            <div class="preview-bar">
+                <span id="previewNm" class="preview-nm">filename.jpg</span>
+                <button class="btn-del" id="removeBtn" onclick="resetUpload()">Remove</button>
+            </div>
+            <button class="btn-success btn-full mt-16" id="analyzeBtn" onclick="startAnalysis()">
+                <span id="btnLabel">🔍 Start Analysis</span>
+                <span id="btnSpin" class="spinner hidden"></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ERROR WRAP -->
+    <div id="general-error-wrap" class="hidden" style="margin-top: 20px; display: none;">
+        <div class="card" style="border-top: 4px solid var(--r5);">
+            <div class="card-hdr" style="background: #fff5f5;">
+                <h3 style="color: #c53030;">🚨 System Error Reported</h3>
+            </div>
+            <div class="tbl-wrap" style="padding: 20px;">
+                <table class="data-tbl" style="width: 100%; border: 1px solid #feb2b2;">
+                    <tr>
+                        <th style="width: 30%; background: #fff5f5; color: #c53030;">Error Type</th>
+                        <td id="general-error-type" style="font-weight: bold; color: #c53030;">Analysis Failure</td>
+                    </tr>
+                    <tr>
+                        <th style="background: #fff5f5; color: #c53030;">Message</th>
+                        <td id="general-error-msg">Error message goes here</td>
+                    </tr>
+                    <tr>
+                        <th style="background: #fff5f5; color: #c53030;">Status Code</th>
+                        <td id="general-error-status">N/A</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="result-foot" style="justify-content: center;">
+                <button class="btn-outline" onclick="location.reload()">🔄 Refresh Application</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- RESULT VIEW -->
+    <div id="result-view" class="hidden" style="display: none; margin-top: 24px;">
+        <div class="card">
+            <div class="result-head">
+                <div class="res-title-blk">
+                    <div class="res-metadata">
+                        <span class="res-lbl-caps" id="label-analysis-result">Analysis Result</span>
+                    </div>
+                    <div id="res-status-pill" class="status-badge" style="display: inline-block; margin-bottom: 8px;">Healthy</div>
+                    <h2 class="res-disease" id="res-disease-name">Plant is Healthy</h2>
+                    <p id="res-summary" style="font-size: 14px; color: var(--n5); max-width: 600px;">Summary of findings...</p>
+                </div>
+                
+                <div class="conf-mini-wrap" style="width: 100%; max-width: 400px;">
+                    <div style="margin-bottom: 12px; font-weight: 700; font-size: 11px; text-transform: uppercase; color: var(--n5);">
+                        📋 Scan Diagnostics
+                    </div>
+                    <table class="data-tbl" style="width: 100%; background: var(--n0); border-radius: 8px; border: 1px solid var(--n1);">
+                        <tr>
+                            <td style="padding: 8px 12px; font-weight: 600; font-size: 12px; width: 40%;">Status</td>
+                            <td style="padding: 8px 12px;" id="tbl-res-status">---</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 12px; font-weight: 600; font-size: 12px;">Disease</td>
+                            <td style="padding: 8px 12px;" id="tbl-res-disease">---</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 8px 12px; font-weight: 600; font-size: 12px;">Confidence</td>
+                            <td style="padding: 8px 12px;" id="tbl-res-conf">---</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 5-Column Info -->
+            <div class="res-grid" id="normal-res-grid">
+                <div class="res-blk">
+                    <h5 id="symptoms">Symptoms</h5>
+                    <ul class="res-list" id="res-symptoms"></ul>
+                </div>
+                <div class="res-blk">
+                    <h5 id="treatment">Treatment</h5>
+                    <ul class="res-list" id="res-treatment"></ul>
+                </div>
+                <div class="res-blk">
+                    <h5 id="prevention">Prevention</h5>
+                    <ul class="res-list" id="res-prevention"></ul>
+                </div>
+                <div class="res-blk">
+                    <h5 id="organic_remedies">Organic Remedies</h5>
+                    <ul class="res-list" id="res-organic"></ul>
+                </div>
+                <div class="res-blk">
+                    <h5 id="chemical_remedies">Chemical Remedies</h5>
+                    <ul class="res-list" id="res-chemical"></ul>
+                </div>
+            </div>
+
+            <!-- Uncertain Warning & Detailed Report -->
+            <div id="res-uncertain-wrap" class="hidden" style="margin: 24px; padding: 20px; background: #fffcf0; border: 1px solid #fde68a; border-radius: 12px; display: none;">
+                <h4 style="color: #92400e; font-size: 16px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; font-family: var(--font-head); border-bottom: 2px solid #fef3c7; padding-bottom: 10px;">
+                    📊 Detailed Technical Report
+                </h4>
+                
+                <div class="tbl-wrap" style="margin-bottom: 24px;">
+                    <table class="data-tbl" style="background: white; border-radius: 12px; overflow: hidden; border: 1px solid var(--n2);">
+                        <thead>
+                            <tr>
+                                <th style="width: 30%;">Metric</th>
+                                <th>Assessment</th>
+                            </tr>
+                        </thead>
+                        <tbody id="res-uncertain-table-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="res-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="res-blk" style="background: #fff5f5; border: 1px solid #feb2b2;">
+                        <h5 style="color: #c53030; border-bottom-color: #feb2b2;">⚠️ Issues Detected</h5>
+                        <ul id="res-issues-list" class="res-list"></ul>
+                    </div>
+                    <div class="res-blk" style="background: #f0fff4; border: 1px solid #9ae6b4;">
+                        <h5 style="color: #2f855a; border-bottom-color: #9ae6b4;">💡 Recommended Actions</h5>
+                        <ul id="res-suggestions-list" class="res-list"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-foot">
+                <button class="btn-primary btn-full" onclick="resetAndNewScan()">⚡ New Analysis</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ADVANCED CAMERA MODAL -->
+<div class="camera-modal" id="camModal">
+    <div class="camera-box">
+        <div class="cam-header">
+            <div class="cam-status-pill">
+                <span class="status-dot" id="statusDot"></span>
+                <span class="cam-status-txt" id="camStatus">Starting Camera...</span>
+            </div>
+            <button class="ctrl-btn" onclick="closeCamera()" title="Close">✕</button>
+        </div>
+
+        <video id="camVideo" autoplay muted playsinline class="video-preview"></video>
+        <div id="cdOverlay" class="countdown-overlay hidden"></div>
+        
+        <div class="cam-guides">
+            <div class="guide guide-tl"></div>
+            <div class="guide guide-tr"></div>
+            <div class="guide guide-bl"></div>
+            <div class="guide guide-br"></div>
+        </div>
+
+        <div class="cam-tip-popup" id="camTip">Position leaf inside the frame</div>
+
+        <div class="cam-quality-box">
+            <div class="q-hdr">
+                <span class="q-title">Sharpness Quality</span>
+                <span class="q-val" id="qLabel">0%</span>
+            </div>
+            <div class="q-bar-track">
+                <div class="q-bar-fill" id="qFill"></div>
+            </div>
+        </div>
+
+        <div class="cam-controls">
+            <button class="ctrl-btn" id="torchBtn" onclick="toggleTorch()" title="Torch/Flash" style="display: none;">🔦</button>
+            <div style="flex: 1; display: flex; justify-content: center;">
+                <button class="snap-btn" id="snapBtn" onclick="captureWithCountdown()" title="Capture"></button>
+            </div>
+            <button class="ctrl-btn" id="switchBtn" onclick="switchCamera()" title="Switch Camera">🔄</button>
+        </div>
+    </div>
+</div>
+
+<canvas id="camCanvas" style="display: none;"></canvas>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentSelection = null;
+    let cameraStream = null;
+    let facingMode = 'environment'; // default to rear
+    let torchOn = false;
+    let torchSupported = false;
+    let qualityInterval = null;
+    let videoDevices = [];
+    let currentDeviceIndex = 0;
+
+    // --- DOM Elements ---
+    const camModal = document.getElementById('camModal');
+    const camVideo = document.getElementById('camVideo');
+    const camStatus = document.getElementById('camStatus');
+    const qFill = document.getElementById('qFill');
+    const qLabel = document.getElementById('qLabel');
+    const cdOverlay = document.getElementById('cdOverlay');
+    const snapBtn = document.getElementById('snapBtn');
+    const torchBtn = document.getElementById('torchBtn');
+
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const fileInput = document.getElementById('fileInput');
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        
+        loadVideoDevices();
+    });
+
+    async function loadVideoDevices() {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            videoDevices = devices.filter(d => d.kind === 'videoinput');
+        } catch (e) {
+            console.error("Error loading devices:", e);
+        }
+    }
+
+    // --- Upload Handlers ---
+    function handleFile(file) {
+        if (!file) return;
+        currentSelection = file;
+        
+        const previewImg = document.getElementById('previewImg');
+        previewImg.src = URL.createObjectURL(file);
+        document.getElementById('previewNm').textContent = file.name;
+        
+        document.getElementById('dropZone').style.display = 'none';
+        const previewZone = document.getElementById('previewZone');
+        previewZone.classList.remove('hidden');
+        previewZone.style.display = 'block';
+        
+        document.getElementById('result-view').style.display = 'none';
+        document.getElementById('general-error-wrap').style.display = 'none';
+    }
+
+    function resetUpload() {
+        currentSelection = null;
+        document.getElementById('dropZone').style.display = 'flex';
+        const previewZone = document.getElementById('previewZone');
+        previewZone.classList.add('hidden');
+        previewZone.style.display = 'none';
+        document.getElementById('fileInput').value = '';
+        document.getElementById('general-error-wrap').style.display = 'none';
+    }
+
+    function resetAndNewScan() {
+        document.getElementById('result-view').style.display = 'none';
+        resetUpload();
+    }
+
+    // --- Advanced Camera Logic ---
+    async function openCamera() {
+        if (!navigator.mediaDevices?.getUserMedia) {
+            alert("Camera not supported in this browser.");
+            return;
+        }
+        
+        camModal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        setCamStatus("Starting...", "#93c5fd");
+
+        await startStream();
+    }
+
+    async function startStream() {
+        stopStream();
+        
+        // Find current device
+        const device = videoDevices[currentDeviceIndex % videoDevices.length];
+        const constraints = {
+            video: device ? { deviceId: { exact: device.deviceId } } : { facingMode: { ideal: facingMode } }
+        };
+        constraints.video.width = { ideal: 1920 };
+        constraints.video.height = { ideal: 1080 };
+
+        try {
+            cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+            camVideo.srcObject = cameraStream;
+            
+            await new Promise(r => camVideo.onloadedmetadata = r);
+            camVideo.play();
+            
+            setCamStatus("Camera Ready", "#22c55e");
+            checkTorch();
+            startQualityMonitor();
+            startFrameGuard();
+        } catch (err) {
+            console.error(err);
+            // Fallback to simple
+            if (err.name === "OverconstrainedError" || err.name === "NotReadableError") {
+                try {
+                    cameraStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    camVideo.srcObject = cameraStream;
+                    await new Promise(r => camVideo.onloadedmetadata = r);
+                    camVideo.play();
+                    setCamStatus("Camera Ready (Fallback)", "#22c55e");
+                    startQualityMonitor();
+                } catch (e2) {
+                    setCamStatus("Error: " + err.name, "#fca5a5");
+                }
+            } else {
+                setCamStatus("Error: " + err.name, "#fca5a5");
+            }
+        }
+    }
+
+    function stopStream() {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(t => t.stop());
+            cameraStream = null;
+        }
+        stopQualityMonitor();
+        stopFrameGuard();
+    }
+
+    let frameGuardInterval = null;
+    function startFrameGuard() {
+        stopFrameGuard();
+        let badFrames = 0;
+        frameGuardInterval = setInterval(() => {
+            if (!cameraStream) return;
+            if (frameLooksValid()) {
+                badFrames = 0;
+                return;
+            }
+            badFrames++;
+            if (badFrames >= 5) {
+                badFrames = 0;
+                if (videoDevices.length > 1) {
+                    currentDeviceIndex++;
+                    setCamStatus("Auto-switching black feed...", "#f59e0b");
+                    startStream();
+                } else {
+                    setCamStatus("BLACK FEED - Check permissions", "#ef4444");
+                }
+            }
+        }, 1000);
+    }
+
+    function stopFrameGuard() {
+        if (frameGuardInterval) clearInterval(frameGuardInterval);
+    }
+
+    function frameLooksValid() {
+        if (!camVideo || camVideo.readyState < 2) return false;
+        const c = document.createElement('canvas');
+        c.width = 40; c.height = 30;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(camVideo, 0, 0, 40, 30);
+        const data = ctx.getImageData(0,0,40,30).data;
+        let sum = 0;
+        for (let i = 0; i < data.length; i += 4) {
+            sum += (data[i] + data[i+1] + data[i+2]) / 3;
+        }
+        return (sum / (data.length / 4)) > 10; // basic brightness check
+    }
+
+    function closeCamera() {
+        stopStream();
+        camModal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    async function switchCamera() {
+        currentDeviceIndex++;
+        await startStream();
+    }
+
+    async function checkTorch() {
+        const track = cameraStream.getVideoTracks()[0];
+        const capabilities = track.getCapabilities?.() || {};
+        torchSupported = !!capabilities.torch;
+        torchBtn.style.display = torchSupported ? 'block' : 'none';
+    }
+
+    async function toggleTorch() {
+        if (!torchSupported) return;
+        torchOn = !torchOn;
+        const track = cameraStream.getVideoTracks()[0];
+        try {
+            await track.applyConstraints({ advanced: [{ torch: torchOn }] });
+            torchBtn.classList.toggle('active', torchOn);
+            torchBtn.textContent = torchOn ? '💡' : '🔦';
+        } catch (e) {
+            console.warn(e);
+        }
+    }
+
+    // --- Blur Detection (Laplacian Variance) ---
+    const qCanvas = document.createElement('canvas');
+    const qCtx = qCanvas.getContext('2d');
+    qCanvas.width = 100;
+    qCanvas.height = 75;
+
+    function computeBlurScore() {
+        if (!camVideo || camVideo.readyState < 2) return 0;
+        qCtx.drawImage(camVideo, 0, 0, 100, 75);
+        const data = qCtx.getImageData(0, 0, 100, 75).data;
+        const grey = new Float32Array(100 * 75);
+        for (let i = 0; i < 7500; i++) {
+            grey[i] = 0.299 * data[i*4] + 0.587 * data[i*4+1] + 0.114 * data[i*4+2];
+        }
+        let sum = 0, sumSq = 0;
+        for (let y = 1; y < 74; y++) {
+            for (let x = 1; x < 99; x++) {
+                const i = y * 100 + x;
+                const lap = 4 * grey[i] - grey[i-1] - grey[i+1] - grey[i-100] - grey[i+100];
+                sum += lap;
+                sumSq += lap * lap;
+            }
+        }
+        const count = 98 * 73;
+        const mean = sum / count;
+        return (sumSq / count) - (mean * mean);
+    }
+
+    function startQualityMonitor() {
+        stopQualityMonitor();
+        qualityInterval = setInterval(() => {
+            const score = computeBlurScore();
+            const pct = Math.min(100, Math.round(score / 1.5)); // adjusted scaling
+            qFill.style.width = pct + '%';
+            qLabel.textContent = pct + '%';
+            
+            if (pct < 30) {
+                qFill.style.background = '#ef4444';
+                setCamStatus("HOLD STEADY - BLURRY", "#ef4444");
+            } else if (pct < 60) {
+                qFill.style.background = '#f59e0b';
+                setCamStatus("MUCH BETTER", "#f59e0b");
+            } else {
+                qFill.style.background = '#22c55e';
+                setCamStatus("PERFECT - READY", "#22c55e");
+            }
+        }, 400);
+    }
+
+    function stopQualityMonitor() {
+        if (qualityInterval) clearInterval(qualityInterval);
+    }
+
+    function setCamStatus(txt, color) {
+        camStatus.textContent = txt;
+        document.getElementById('statusDot').style.background = color;
+    }
+
+    // --- Capture & Analysis ---
+    function captureWithCountdown() {
+        let count = 3;
+        cdOverlay.classList.remove('hidden');
+        cdOverlay.textContent = count;
+        snapBtn.disabled = true;
+
+        const timer = setInterval(() => {
+            count--;
+            if (count > 0) {
+                cdOverlay.textContent = count;
+            } else {
+                clearInterval(timer);
+                cdOverlay.textContent = "📸";
+                setTimeout(() => {
+                    cdOverlay.classList.add('hidden');
+                    doCapture();
+                    snapBtn.disabled = false;
+                }, 400);
+            }
+        }, 800);
+    }
+
+    function doCapture() {
+        const canvas = document.getElementById('camCanvas');
+        canvas.width = camVideo.videoWidth;
+        canvas.height = camVideo.videoHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(camVideo, 0, 0);
+        
+        canvas.toBlob(blob => {
+            const file = new File([blob], "camera_capture.jpg", { type: "image/jpeg" });
+            handleFile(file);
+            closeCamera();
+            startAnalysis();
+        }, "image/jpeg", 0.95);
+    }
+
+    async function startAnalysis() {
+        if (!currentSelection) return;
+        
+        const btn = document.getElementById('analyzeBtn');
+        const spin = document.getElementById('btnSpin');
+        const spinnerFull = document.getElementById('global-spinner');
+        
+        btn.disabled = true;
+        spin.classList.remove('hidden');
+        if (spinnerFull) spinnerFull.style.display = 'flex';
+        
+        const form = new FormData();
+        form.append('image', currentSelection);
+        form.append('lang', localStorage.getItem('plantcure_lang') || 'en');
+        
+        try {
+            const res = await fetch('/api/predict', { method: 'POST', body: form });
+            const data = await res.json();
+            
+            if (!res.ok) {
+                // Handle 422 Unprocessable Entity (Uncertain/Invalid)
+                if (data.status === 'uncertain' || data.status === 'invalid' || data.status === 'error') {
+                    showResult(data);
+                    return;
+                }
+                const err = new Error(data.message || 'Analysis failed');
+                err.status = res.status;
+                err.type = "Application Error";
+                throw err;
+            }
+            showResult(data);
+        } catch (e) {
+            document.getElementById('general-error-msg').textContent = e.message;
+            document.getElementById('general-error-status').textContent = e.status || "ERR_CONNECTION";
+            document.getElementById('general-error-type').textContent = e.type || "Network Error";
+            document.getElementById('general-error-wrap').style.display = 'block';
+            document.getElementById('result-view').style.display = 'none';
+        } finally {
+            btn.disabled = false;
+            spin.classList.add('hidden');
+            if (spinnerFull) spinnerFull.style.display = 'none';
+        }
+    }
+
+    function showResult(data) {
+        const res = document.getElementById('result-view');
+        const status = data.status || 'unknown';
+        res.style.display = 'block';
+        
+        const pill = document.getElementById('res-status-pill');
+        pill.className = `status-badge status-${status}`;
+        pill.textContent = status.toUpperCase();
+        
+        const isProblem = (status === 'uncertain' || status === 'invalid' || status === 'error');
+        
+        // Handle Uncertainty/Invalidation
+        const nameEl = document.getElementById('res-disease-name');
+        if (isProblem) {
+            nameEl.textContent = status === 'invalid' ? "Please provide a good and clear image" : "Uncertain Detection";
+            nameEl.style.color = status === 'invalid' ? "var(--r5)" : "var(--a5)";
+        } else {
+            nameEl.textContent = data.translated_disease || data.disease || "Unknown Result";
+            nameEl.style.color = "var(--n9)";
+        }
+
+        const health = data.health || 0;
+        const diseased = data.diseased || (100 - health);
+        
+        document.getElementById('res-summary').textContent = data.message || data.description || "";
+
+        // Update Summary Table
+        document.getElementById('tbl-res-status').innerHTML = `<span class="status-badge status-${status}">${status}</span>`;
+        document.getElementById('tbl-res-disease').textContent = data.translated_disease || data.disease || "N/A";
+        document.getElementById('tbl-res-conf').innerHTML = `<span style="color:${data.confidence < 70 ? 'var(--r5)' : 'var(--g6)'}; font-weight:bold;">${data.confidence}%</span>`;
+
+        const fill = (id, items) => {
+            const ul = document.getElementById(id);
+            if (!ul) return;
+            ul.innerHTML = items?.length ? items.map(i => `<li>${i}</li>`).join('') : '<li>No data available</li>';
+        };
+
+        document.getElementById('normal-res-grid').style.display = isProblem ? 'none' : 'grid';
+        
+        if (!isProblem) {
+            fill('res-symptoms', data.symptoms);
+            fill('res-treatment', data.treatment);
+            fill('res-prevention', data.prevention);
+            fill('res-organic', data.organic_remedies);
+            fill('res-chemical', data.chemical_remedies);
+        }
+
+        const uncWrap = document.getElementById('res-uncertain-wrap');
+        if (isProblem || (data.issues && data.issues.length)) {
+            uncWrap.style.display = 'block';
+            
+            // Build the table body for technical report
+            const tableBody = document.getElementById('res-uncertain-table-body');
+            const rows = [
+                { key: 'Analysis Status', val: `<span class="status-badge status-${status}">${status.toUpperCase()}</span>` },
+                { key: 'Detected Disease', val: `<b>${data.translated_disease || data.disease || 'None'}</b>` },
+                { key: 'Confidence Level', val: `<span style="color:${data.confidence < 70 ? 'var(--r5)' : 'var(--g6)'}; font-weight:bold;">${data.confidence}%</span>` },
+                { key: 'System Message', val: data.message || 'Verification required' }
+            ];
+            
+            tableBody.innerHTML = rows.map(r => `
+                <tr>
+                    <td style="font-weight:600; color:var(--n5);">${r.key}</td>
+                    <td style="color:var(--n8);">${r.val}</td>
+                </tr>
+            `).join('');
+
+            fill('res-issues-list', data.issues);
+            fill('res-suggestions-list', data.suggestions);
+            uncWrap.style.animation = "shake 0.4s ease-in-out";
+        } else {
+            uncWrap.style.display = 'none';
+        }
+
+        res.scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+{% endblock %}

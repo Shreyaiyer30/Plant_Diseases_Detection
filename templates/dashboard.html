@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — PlantCure{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-hdr">
+  <div>
+    <h1 class="page-title" id="dash-h1">Dashboard</h1>
+    <p class="page-sub" id="dash-sub">Welcome back. Here's your plant health overview.</p>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi kpi-green">
+    <div class="kpi-ico">🔬</div>
+    <div>
+        <div class="kpi-l" id="label-total-scans">Total Scans</div>
+        <div class="kpi-n" id="stat-total">0</div>
+    </div>
+  </div>
+  <div class="kpi kpi-teal">
+    <div class="kpi-ico">✅</div>
+    <div>
+        <div class="kpi-l" id="label-healthy">Healthy</div>
+        <div class="kpi-n" id="stat-healthy">0</div>
+    </div>
+  </div>
+  <div class="kpi kpi-red">
+    <div class="kpi-ico">🦠</div>
+    <div>
+        <div class="kpi-l" id="label-diseased">Diseased</div>
+        <div class="kpi-n" id="stat-diseased">0</div>
+    </div>
+  </div>
+  <div class="kpi kpi-amber">
+    <div class="kpi-ico">🎯</div>
+    <div>
+        <div class="kpi-l" id="label-avg-health">Avg Health</div>
+        <div class="kpi-n" id="stat-health">0%</div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="background: linear-gradient(135deg, var(--g9), var(--g8)); color: white; padding: 32px; border: none; margin-bottom: 24px; position: relative; overflow: hidden;">
+  <div style="position: relative; z-index: 2;">
+    <h2 style="font-family: var(--font-head); font-size: 24px; margin-bottom: 8px;" id="cta-h3">New Diagnosis</h2>
+    <p style="opacity: 0.8; font-size: 14px; max-width: 400px; margin-bottom: 24px;" id="cta-p">Identify plant diseases using our advanced AI. Upload a photo or use your camera for instant results.</p>
+    <a href="{{ url_for('detect') }}" class="btn-primary" style="background: white; color: var(--g8); border: none;" id="btn-start-scan">Start Scan →</a>
+  </div>
+  <div style="position: absolute; right: -20px; bottom: -20px; font-size: 120px; opacity: 0.1; pointer-events: none;">🌿</div>
+</div>
+
+<div class="card">
+  <div class="card-hdr">
+    <h3 id="card-recent-title">Recent Diagnoses</h3>
+    <a href="{{ url_for('history') }}" class="card-link">VIEW ALL →</a>
+  </div>
+  <div class="recent-list" id="dashboard-recent">
+    <div style="padding: 40px; text-align: center; color: var(--n5);">Loading recent data...</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const fmtDate = (d) => new Date(d).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' });
+
+  async function loadDashboard() {
+    try {
+      const res = await fetch('/api/analytics');
+      const data = await res.json();
+      
+      document.getElementById('stat-total').textContent = data.total || 0;
+      document.getElementById('stat-healthy').textContent = data.healthy || 0;
+      document.getElementById('stat-diseased').textContent = data.diseased || 0;
+      document.getElementById('stat-health').textContent = Math.round(data.avg_confidence || 0) + '%';
+      
+      const resHist = await fetch('/api/history');
+      const histData = await resHist.json();
+      const recent = document.getElementById('dashboard-recent');
+      
+      if (histData.length === 0) {
+        recent.innerHTML = '<div style="padding: 40px; text-align: center; color: var(--n5);">No scans yet. Click "Start Scan" to begin.</div>';
+        return;
+      }
+      
+      recent.innerHTML = histData.slice(0, 5).map(item => `
+        <div class="recent-row">
+          <img src="${item.filename ? `/uploads/${item.filename}` : ''}" class="recent-thumb" onerror="this.src='https://placehold.co/44x44?text=Leaf'">
+          <div class="recent-info">
+            <div class="recent-dis">${item.disease}</div>
+            <div class="recent-time">${fmtDate(item.timestamp)}</div>
+          </div>
+          <div class="recent-conf">
+            <span class="badge ${item.status === 'healthy' ? 'badge-healthy' : 'badge-diseased'}">${item.status}</span>
+          </div>
+          <div class="recent-conf ${item.confidence > 80 ? 'conf-hi' : item.confidence > 50 ? 'conf-md' : 'conf-lo'}">
+            ${item.confidence}%
+          </div>
+        </div>
+      `).join('');
+    } catch (e) { 
+      console.error(e);
+      document.getElementById('dashboard-recent').innerHTML = '<div style="padding: 20px; color: var(--r5);">Error loading data.</div>';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadDashboard);
+  document.addEventListener('langChanged', (e) => {
+      // Re-render recent list with new labels if needed
+      loadDashboard();
+  });
+</script>
+{% endblock %}

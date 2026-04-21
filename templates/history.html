@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}History — PlantCure{% endblock %}
+{% block page_title %}Recent Scans{% endblock %}
+
+{% block content %}
+<div class="page-hdr">
+    <div>
+        <h1 class="page-title" id="hist-h1">History</h1>
+        <p class="page-sub" id="hist-sub">Review your previous plant diagnosis reports.</p>
+    </div>
+</div>
+
+<div class="card">
+    <div class="tbl-wrap">
+        <table class="data-tbl">
+            <thead>
+                <tr>
+                    <th>Photo</th>
+                    <th id="label-disease">Disease</th>
+                    <th id="label-date">Date</th>
+                    <th id="label-status">Status</th>
+                    <th id="label-confidence">Confidence</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="history-table-body">
+                <tr>
+                    <td colspan="6" style="padding: 40px; text-align: center; color: var(--n5);">Loading history...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function loadHistory() {
+        try {
+            const res = await fetch('/api/history');
+            const data = await res.json();
+            const tbody = document.getElementById('history-table-body');
+            
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="padding: 40px; text-align: center; color: var(--n5);">No records found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(item => `
+                <tr>
+                    <td>
+                        <img src="${item.filename ? `/uploads/${item.filename}` : ''}" class="hist-thumb" onerror="this.src='https://placehold.co/40x40?text=Leaf'">
+                    </td>
+                    <td>
+                        <div class="td-dis">
+                            <span class="ddot ${item.status === 'healthy' ? 'ddot-g' : 'ddot-r'}"></span>
+                            ${item.disease}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="td-time">
+                            ${new Date(item.timestamp).toLocaleDateString()}<br>
+                            <small>${new Date(item.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge ${item.status === 'healthy' ? 'badge-healthy' : 'badge-diseased'}">${item.status}</span>
+                    </td>
+                    <td>
+                        <div class="conf-bar-wrap">
+                            <div class="conf-mini">
+                                <div class="conf-fill ${item.confidence > 80 ? 'fill-g' : item.confidence > 50 ? 'fill-a' : 'fill-r'}" style="width: ${item.confidence}%"></div>
+                            </div>
+                            <span class="conf-pct">${item.confidence}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <button class="btn-del" onclick="deleteHistory('${item.id}')">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (e) {
+            console.error(e);
+            document.getElementById('history-table-body').innerHTML = '<tr><td colspan="6" style="color: var(--r5); text-align: center;">Error loading history.</td></tr>';
+        }
+    }
+
+    async function deleteHistory(id) {
+        if (!confirm("Are you sure you want to delete this record?")) return;
+        try {
+            await fetch(`/api/history/${id}`, { method: 'DELETE' });
+            loadHistory();
+        } catch (e) { alert("Delete failed"); }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadHistory);
+    document.addEventListener('langChanged', loadHistory);
+</script>
+{% endblock %}

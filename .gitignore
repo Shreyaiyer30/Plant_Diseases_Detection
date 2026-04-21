@@ -1,22 +1,58 @@
+# In Git Bash, create .gitignore
+cat > .gitignore << 'EOF'
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-myenv/
-
-# Environment
-.env
-
-# OS junk
-.DS_Store
-Thumbs.db
-*.log
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs and databases
+*.log
+*.sql
+*.sqlite
+*.db
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Project specific
+uploads/
+static/uploads/
+instance/
+*.jpg
+*.png
+*.jpeg
+
+# TensorFlow specific (large files)
 *.h5
-*.keras
+*.pb
+*.ckpt
+*.pkl
+EOFmodels/*.zip
 models/*.h5
-models/*.keras
+models/*.pb

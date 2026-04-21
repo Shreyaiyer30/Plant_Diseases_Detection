@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}PlantCure — AI Disease Detection{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}"/>
+  <style>
+    /* Additional fixes for specific v3 elements not in styles.css or needing override */
+    .sb-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+        opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 990;
+        backdrop-filter: blur(2px);
+    }
+    .sb-overlay.show { opacity: 1; pointer-events: auto; }
+
+    .chat-launcher {
+        position: fixed; right: 24px; bottom: 24px; width: 56px; height: 56px;
+        border-radius: 50%; background: var(--g6); color: white; border: none;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2); cursor: pointer; z-index: 999;
+        display: flex; align-items: center; justify-content: center; font-size: 24px;
+        transition: transform 0.3s, background 0.3s;
+    }
+    .chat-launcher:hover { transform: scale(1.1); background: var(--g7); }
+    .chat-launcher.hidden { display: none; }
+    
+    .chat-widget {
+        position: fixed; right: 24px; bottom: 90px; width: 340px; height: 480px;
+        background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        z-index: 1000; display: flex; flex-direction: column; overflow: hidden;
+        border: 1px solid var(--n2); transition: transform 0.3s, opacity 0.3s;
+    }
+    .chat-widget.hidden { display: none; }
+    .chat-widget.collapsed { height: 52px; transform: translateY(0); }
+    
+    .chat-hdr { padding: 14px 16px; background: var(--g6); color: white; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .chat-hdr h4 { font-family: var(--font-head); font-size: 14px; display: flex; align-items: center; gap: 8px; }
+    .online-dot { width: 8px; height: 8px; background: #4ade80; border-radius: 50%; display: inline-block; }
+    .chat-hdr-actions { display: flex; gap: 8px; }
+    .chat-hdr-btn { background: transparent; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0 4px; }
+    
+    .chat-body { flex: 1; padding: 16px; overflow-y: auto; background: var(--n0); display: flex; flex-direction: column; gap: 12px; }
+    .msg { max-width: 85%; padding: 10px 14px; border-radius: 12px; font-size: 13.5px; line-height: 1.5; }
+    .msg-bot { background: white; color: var(--n9); align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid var(--n2); }
+    .msg-user { background: var(--g6); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+    
+    .chat-pills { padding: 8px 12px; background: white; border-top: 1px solid var(--n1); display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+    .pill { white-space: nowrap; padding: 6px 12px; background: var(--n1); border: none; border-radius: 99px; font-size: 11px; color: var(--n7); cursor: pointer; transition: background 0.2s; }
+    .pill:hover { background: var(--g1); color: var(--g7); }
+    
+    .chat-input-bar { padding: 12px; background: white; border-top: 1px solid var(--n2); display: flex; gap: 8px; }
+    .chat-input-bar input { flex: 1; border: 1px solid var(--n2); border-radius: 8px; padding: 10px 12px; font-size: 13px; font-family: var(--font-body); outline: none; }
+    .chat-input-bar input:focus { border-color: var(--g6); }
+    .btn-send { width: 36px; height: 36px; background: var(--g6); color: white; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+
+    .spinner-overlay { 
+        position: fixed; inset: 0; background: rgba(255,255,255,0.85); 
+        z-index: 2000; display: none; align-items: center; 
+        justify-content: center; flex-direction: column; gap: 16px; 
+        backdrop-filter: blur(4px);
+    }
+    .spinner-v3 { 
+        width: 36px; height: 36px; border: 3.5px solid var(--n2); 
+        border-top-color: var(--g6); border-radius: 50%; 
+        animation: rot 0.8s linear infinite; 
+    }
+    @keyframes rot { to { transform: rotate(360deg); } }
+
+    @media (max-width: 768px) {
+        .sidebar { transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sidebar.open { transform: translateX(0); }
+        .main-wrap { margin-left: 0; }
+        .hamburger { display: block; }
+        .chat-widget { width: calc(100% - 48px); right: 24px; bottom: 80px; }
+    }
+    
+    .nav-item.active { background: var(--sb-active-bg); color: var(--sb-active-text); font-weight: 700; }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body class="app-body">
+  
+  <div class="spinner-overlay" id="global-spinner">
+    <div class="spinner-v3"></div>
+    <p style="font-family: var(--font-head); color: var(--n9); font-weight: 600;" id="spinner-text">Analyzing leaf patterns...</p>
+  </div>
+
+  <!-- Sidebar Overlay -->
+  <div class="sb-overlay" id="sb-overlay"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sb-logo" style="padding: 24px 20px; display: flex; align-items: center; gap: 10px;">
+      <div style="width: 36px; height: 36px; background: var(--g6); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;">🌿</div>
+      <span style="font-family: var(--font-head); font-size: 18px; font-weight: 800; color: var(--wh); letter-spacing: -0.02em;">PlantCure</span>
+    </div>
+    
+    <nav class="sb-nav" style="flex: 1; padding: 0 12px; display: flex; flex-direction: column; gap: 2px;">
+      <a href="{{ url_for('dashboard') }}" class="nav-item {% if request.endpoint == 'dashboard' or request.endpoint == 'index' %}active{% endif %}">
+        <span class="nav-icon">📊</span> <span id="nav-dashboard">Dashboard</span>
+      </a>
+      <a href="{{ url_for('detect') }}" class="nav-item {% if request.endpoint == 'detect' %}active{% endif %}">
+        <span class="nav-icon">🔍</span> <span id="nav-detect">Detect Disease</span>
+      </a>
+      <a href="{{ url_for('history') }}" class="nav-item {% if request.endpoint == 'history' %}active{% endif %}">
+        <span class="nav-icon">📜</span> <span id="nav-history">History</span>
+      </a>
+      <a href="{{ url_for('analytics') }}" class="nav-item {% if request.endpoint == 'analytics' %}active{% endif %}">
+        <span class="nav-icon">📈</span> <span id="nav-analytics">Analytics</span>
+      </a>
+    </nav>
+
+    <div class="sb-footer" style="padding: 16px; border-top: 1px solid var(--sb-border);">
+        <label class="lang-label" style="font-size: 10px; color: var(--g4); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8;">Language</label>
+        <select id="language-select" style="width: 100%; margin-top: 8px; padding: 10px; border-radius: 8px; border: 1.5px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: white; font-family: var(--font-body); font-size: 13px; font-weight: 500; outline: none; cursor: pointer;">
+          <option value="en" style="background: var(--g9);">English (US)</option>
+          <option value="hi" style="background: var(--g9);">हिन्दी (Hindi)</option>
+          <option value="mr" style="background: var(--g9);">मराठी (Marathi)</option>
+        </select>
+    </div>
+
+    <div class="sb-user">
+      <div class="user-av" id="user-av">{{ current_user.name[0]|upper }}</div>
+      <div class="user-info">
+        <div class="user-nm" id="user-nm">{{ current_user.name }}</div>
+        <div class="user-rl">{{ current_user.role|capitalize }}</div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="sb-logout" title="Logout">🚪</a>
+    </div>
+  </aside>
+
+  <!-- Main Wrap -->
+  <div class="main-wrap">
+    <header class="topbar">
+      <button class="hamburger" id="ham-btn" style="font-size: 20px;">☰</button>
+      <div class="topbar-title" id="page-title-text">{% block page_title %}Dashboard{% endblock %}</div>
+      <div class="topbar-right">
+        <div class="topbar-user" style="display: flex; align-items: center; gap: 8px;">
+          <span style="width: 8px; height: 8px; background: #22c55e; border-radius: 50%;"></span>
+          <span>Online</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="content">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat, msg in messages %}
+            <div class="flash flash-{{ cat }}">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <!-- Chat Widget -->
+  <div class="chat-widget hidden" id="chat-widget">
+    <div class="chat-hdr" onclick="toggleChat(event)">
+      <h4 id="chat-h4"><span class="online-dot"></span> Plant Assistant</h4>
+      <div class="chat-hdr-actions">
+        <button class="chat-hdr-btn" type="button" id="chat-toggle-btn">▾</button>
+        <button class="chat-hdr-btn" type="button" onclick="closeChatWidget(event)">×</button>
+      </div>
+    </div>
+    <div class="chat-body" id="chat-msgs">
+      <div class="msg msg-bot" id="chat-init-msg">Hello! I'm your AI Plant Assistant. How can I help you today?</div>
+    </div>
+    <div class="chat-pills" id="chat-pills">
+      <button class="pill" id="pill-prevention" onclick="chatQuick('How can I prevent plant diseases?')">Prevention</button>
+      <button class="pill" id="pill-organic" onclick="chatQuick('What are some organic remedies?')">Organic</button>
+      <button class="pill" id="pill-chemicals" onclick="chatQuick('Common chemical treatments?')">Chemicals</button>
+    </div>
+    <div class="chat-input-bar">
+      <input type="text" id="chat-inp" placeholder="Ask a question...">
+      <button class="btn-send" id="chat-send" onclick="sendChat()">↗</button>
+    </div>
+  </div>
+
+  <button class="chat-launcher visible" id="chat-launcher" onclick="openChatWidget()">💬</button>
+
+  <script>
+    // --- Universal UI Handlers ---
+    const hamBtn = document.getElementById('ham-btn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sb-overlay');
+
+    if (hamBtn) {
+      hamBtn.addEventListener('click', () => {
+        sidebar.classList.add('open');
+        overlay.classList.add('show');
+      });
+    }
+
+    if (overlay) {
+      overlay.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      });
+    }
+
+    // --- Chat Logic ---
+    let chatHistory = [];
+    let currentChatSessionId = `chat-${Date.now()}`;
+
+    function toggleChat(event) {
+        if (event) event.stopPropagation();
+        document.getElementById('chat-widget').classList.toggle('collapsed');
+    }
+
+    function closeChatWidget(event) {
+        if (event) event.stopPropagation();
+        document.getElementById('chat-widget').classList.add('hidden');
+        document.getElementById('chat-launcher').classList.add('visible');
+    }
+
+    function openChatWidget() {
+        document.getElementById('chat-widget').classList.remove('hidden');
+        document.getElementById('chat-widget').classList.remove('collapsed');
+        document.getElementById('chat-launcher').classList.remove('visible');
+    }
+
+    function chatQuick(txt) {
+        document.getElementById('chat-inp').value = txt;
+        sendChat();
+    }
+
+    async function sendChat() {
+        const inp = document.getElementById('chat-inp');
+        const txt = inp.value.trim();
+        if (!txt) return;
+        
+        addMsg(txt, 'user');
+        chatHistory.push({ role: 'user', content: txt });
+        inp.value = '';
+        
+        const typingId = addMsg('Thinking...', 'bot');
+        
+        try {
+            const res = await fetch('/api/chat', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    question: txt,
+                    messages: chatHistory,
+                    lang: document.getElementById('language-select').value,
+                    session_id: currentChatSessionId
+                })
+            });
+            const data = await res.json();
+            const botReply = data.response || "I'm sorry, I couldn't process that.";
+            
+            const typingEl = document.getElementById(typingId);
+            if (typingEl) typingEl.remove();
+            
+            addMsg(botReply, 'bot');
+            chatHistory.push({ role: 'assistant', content: botReply });
+        } catch (e) { 
+            const typingEl = document.getElementById(typingId);
+            if (typingEl) typingEl.textContent = 'Error connecting to assistant.';
+        }
+    }
+
+    function addMsg(txt, role) {
+        const msgs = document.getElementById('chat-msgs');
+        const div = document.createElement('div');
+        const id = 'msg-' + Date.now();
+        div.id = id;
+        div.className = `msg msg-${role}`;
+        div.innerHTML = `<div class="msg-content">${txt.replace(/\n/g, '<br>')}</div>`;
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+        return id;
+    }
+
+    document.getElementById('chat-inp').addEventListener('keypress', e => { if (e.key === 'Enter') sendChat(); });
+
+    // --- Language Selection ---
+    const langSelect = document.getElementById('language-select');
+    langSelect.value = localStorage.getItem('plantcure_lang') || 'en';
+
+    langSelect.addEventListener('change', (e) => {
+        localStorage.setItem('plantcure_lang', e.target.value);
+        location.reload(); // Hard reload to re-fetch translations and re-render
+    });
+
+    async function applyLanguage(code) {
+        const langCode = code || localStorage.getItem('plantcure_lang') || 'en';
+        try {
+            const res = await fetch(`/api/lang/${langCode}`);
+            const lang = await res.json();
+            
+            document.querySelectorAll('[id]').forEach(el => {
+                const key = el.id.replace(/-/g, '_');
+                if (lang[key]) {
+                  if (el.tagName === 'INPUT' && el.placeholder) el.placeholder = lang[key];
+                  else el.textContent = lang[key];
+                }
+            });
+            
+            // Custom translations for page titles
+            const pageTitle = document.getElementById('page-title-text');
+            if (pageTitle) {
+                const key = '{{ request.endpoint }}';
+                if (lang[key]) pageTitle.textContent = lang[key];
+                else if (lang['nav_'+key]) pageTitle.textContent = lang['nav_'+key];
+                else if (lang[key.split('.')[0]]) pageTitle.textContent = lang[key.split('.')[0]];
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    // Run on load
+    document.addEventListener('DOMContentLoaded', () => {
+        applyLanguage(langSelect.value);
+    });
+  </script>
+  
+  {% block scripts %}{% endblock %}
+</body>
+</html>

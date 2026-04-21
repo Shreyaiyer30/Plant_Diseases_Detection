@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}Analytics{% endblock %}
+
+{% block title %}Analytics — PlantCure{% endblock %}
 {% block page_title %}Analytics{% endblock %}
 
 {% block head %}
@@ -7,66 +8,74 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
+<div class="page-hdr">
   <div>
-    <h1 class="page-title">Analytics Dashboard</h1>
-    <p class="page-sub">Visual insights from your diagnosis history.</p>
+    <h1 class="page-title" id="ana-h1">Analytics Dashboard</h1>
+    <p class="page-sub" id="ana-sub">Visual insights from your diagnosis history.</p>
   </div>
-  <button class="btn-outline" id="refreshBtn">↻ Refresh</button>
+  <button class="btn-outline" id="refreshBtn" onclick="loadAnalytics()">↻ Refresh</button>
 </div>
 
-<!-- KPI cards -->
+<!-- KPI grid -->
 <div class="kpi-grid" id="kpiGrid">
-  <div class="kpi-card kpi-green">
-    <div class="kpi-icon">🔬</div>
-    <div class="kpi-body"><div class="kpi-num" id="kTotal">—</div><div class="kpi-label">Total Diagnoses</div></div>
+  <div class="kpi kpi-green">
+    <div class="kpi-ico">🔬</div>
+    <div>
+        <div class="kpi-l" id="label-total-scans-ana">Total Scans</div>
+        <div class="kpi-n" id="kTotal">—</div>
+    </div>
   </div>
-  <div class="kpi-card kpi-teal">
-    <div class="kpi-icon">✅</div>
-    <div class="kpi-body"><div class="kpi-num" id="kHealthy">—</div><div class="kpi-label">Healthy Plants</div></div>
+  <div class="kpi kpi-teal">
+    <div class="kpi-ico">✅</div>
+    <div>
+        <div class="kpi-l" id="label-healthy-ana">Healthy</div>
+        <div class="kpi-n" id="kHealthy">—</div>
+    </div>
   </div>
-  <div class="kpi-card kpi-red">
-    <div class="kpi-icon">🦠</div>
-    <div class="kpi-body"><div class="kpi-num" id="kDiseased">—</div><div class="kpi-label">Diseased Plants</div></div>
+  <div class="kpi kpi-red">
+    <div class="kpi-ico">🦠</div>
+    <div>
+        <div class="kpi-l" id="label-diseased-ana">Diseased</div>
+        <div class="kpi-n" id="kDiseased">—</div>
+    </div>
   </div>
-  <div class="kpi-card kpi-amber">
-    <div class="kpi-icon">🎯</div>
-    <div class="kpi-body"><div class="kpi-num" id="kConf">—</div><div class="kpi-label">Avg Confidence</div></div>
+  <div class="kpi kpi-amber">
+    <div class="kpi-ico">🎯</div>
+    <div>
+        <div class="kpi-l" id="label-avg-confidence-ana">Avg Confidence</div>
+        <div class="kpi-n" id="kConf">—</div>
+    </div>
   </div>
 </div>
 
-<!-- Charts row -->
-<div class="charts-grid">
-
+<div class="charts-grid" style="display: grid; grid-template-columns: 1.2fr 1.8fr; gap: 24px; margin-bottom: 24px;">
   <!-- Doughnut -->
-  <div class="card chart-card">
-    <div class="card-header"><h3>Health Ratio</h3></div>
-    <div class="chart-wrap chart-sm">
-      <canvas id="donutChart"></canvas>
+  <div class="card">
+    <div class="card-hdr"><h3 id="card-health-ratio-title">Health Ratio</h3></div>
+    <div style="padding: 24px; display: flex; justify-content: center;">
+      <canvas id="donutChart" style="max-height: 250px;"></canvas>
     </div>
   </div>
 
   <!-- Bar chart disease breakdown -->
-  <div class="card chart-card chart-card-wide">
-    <div class="card-header"><h3>Disease Breakdown</h3></div>
-    <div class="chart-wrap">
-      <canvas id="barChart"></canvas>
+  <div class="card">
+    <div class="card-hdr"><h3 id="card-disease-breakdown-title">Disease Breakdown</h3></div>
+    <div style="padding: 24px;">
+      <canvas id="barChart" style="max-height: 250px;"></canvas>
     </div>
   </div>
-
 </div>
 
 <!-- Daily activity -->
-<div class="card mt-20">
-  <div class="card-header"><h3>Daily Activity</h3></div>
-  <div class="chart-wrap">
-    <canvas id="lineChart"></canvas>
+<div class="card">
+  <div class="card-hdr"><h3>Daily Activity</h3></div>
+  <div style="padding: 24px;">
+    <canvas id="lineChart" style="max-height: 300px;"></canvas>
   </div>
 </div>
 
-<!-- Empty state (shown when no data) -->
-<div class="empty-state hidden" id="emptyAnalytics">
-  <div class="empty-icon">📊</div>
+<div class="empty-state hidden" id="emptyAnalytics" style="padding: 60px; text-align: center;">
+  <div style="font-size: 64px; margin-bottom: 20px;">📊</div>
   <p>No data yet. <a href="{{ url_for('detect') }}">Start diagnosing plants</a> to see analytics here.</p>
 </div>
 {% endblock %}
@@ -79,16 +88,31 @@ async function loadAnalytics() {
   const res  = await fetch("/api/analytics");
   const data = await res.json();
 
-  if (data.total === 0) {
+  if (!data || data.total === 0) {
     document.getElementById("emptyAnalytics").classList.remove("hidden");
-    document.getElementById("kpiGrid").style.opacity = "0.4";
+    document.getElementById("kpiGrid").style.opacity = "0.3";
     return;
+  } else {
+    document.getElementById("emptyAnalytics").classList.add("hidden");
+    document.getElementById("kpiGrid").style.opacity = "1";
   }
 
-  document.getElementById("kTotal").textContent   = data.total;
-  document.getElementById("kHealthy").textContent  = data.healthy;
-  document.getElementById("kDiseased").textContent = data.diseased;
-  document.getElementById("kConf").textContent     = data.avg_confidence + "%";
+  document.getElementById("kTotal").textContent   = data.total || 0;
+  document.getElementById("kHealthy").textContent  = data.healthy || 0;
+  document.getElementById("kDiseased").textContent = (data.total - data.healthy) || 0;
+  document.getElementById("kConf").textContent     = (data.avg_confidence || 0) + "%";
+
+  const chartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+          legend: {
+              labels: {
+                  font: { family: 'DM Sans', size: 11, weight: '600' }
+              }
+          }
+      }
+  };
 
   // ── Doughnut ──────────────────────────────────────────────────
   const dCtx = document.getElementById("donutChart").getContext("2d");
@@ -97,15 +121,24 @@ async function loadAnalytics() {
     type: "doughnut",
     data: {
       labels: ["Healthy", "Diseased"],
-      datasets: [{ data: [data.healthy, data.diseased],
-                   backgroundColor: ["#22c55e","#ef4444"],
-                   borderWidth: 2, borderColor: "#fff" }]
+      datasets: [{ 
+          data: [data.healthy, data.total - data.healthy],
+          backgroundColor: ["#22c55e", "#ef4444"],
+          hoverOffset: 4,
+          borderWidth: 0
+      }]
     },
-    options: { plugins: { legend: { position: "bottom" } }, cutout: "60%" }
+    options: {
+        ...chartOptions,
+        cutout: '70%',
+        plugins: {
+            legend: { position: 'bottom' }
+        }
+    }
   });
 
   // ── Bar chart ─────────────────────────────────────────────────
-  const dcEntries = Object.entries(data.disease_counts).sort((a,b)=>b[1]-a[1]).slice(0, 10);
+  const dcEntries = Object.entries(data.disease_counts || {}).sort((a,b)=>b[1]-a[1]).slice(0, 8);
   const bCtx = document.getElementById("barChart").getContext("2d");
   if (barC) barC.destroy();
   barC = new Chart(bCtx, {
@@ -113,21 +146,23 @@ async function loadAnalytics() {
     data: {
       labels: dcEntries.map(([k])=>k),
       datasets: [{
-        label: "Count",
+        label: "Diagnosis Count",
         data: dcEntries.map(([,v])=>v),
-        backgroundColor: dcEntries.map(([k])=> k === "Healthy" ? "#22c55e" : "#ef4444"),
-        borderRadius: 6,
+        backgroundColor: "#16a34a",
+        borderRadius: 8,
+        barThickness: 20
       }]
     },
     options: {
-      indexAxis: "y",
+      ...chartOptions,
+      indexAxis: 'y',
       plugins: { legend: { display: false } },
-      scales: { x: { ticks: { precision: 0 } } }
+      scales: { x: { ticks: { precision: 0 }, grid: { display: false } }, y: { grid: { display: false } } }
     }
   });
 
   // ── Line chart (daily) ────────────────────────────────────────
-  const dayEntries = Object.entries(data.daily_counts).slice(0,14).reverse();
+  const dayEntries = Object.entries(data.daily_counts || {}).slice(-10);
   const lCtx = document.getElementById("lineChart").getContext("2d");
   if (lineC) lineC.destroy();
   lineC = new Chart(lCtx, {
@@ -135,23 +170,29 @@ async function loadAnalytics() {
     data: {
       labels: dayEntries.map(([k])=>k),
       datasets: [{
-        label: "Diagnoses per day",
+        label: "Daily Scans",
         data: dayEntries.map(([,v])=>v),
         fill: true,
         borderColor: "#16a34a",
-        backgroundColor: "rgba(22,163,74,0.12)",
+        backgroundColor: "rgba(22,163,74,0.08)",
         tension: 0.4,
+        pointRadius: 4,
         pointBackgroundColor: "#16a34a",
+        borderWidth: 3
       }]
     },
     options: {
-      scales: { y: { ticks: { precision: 0 }, beginAtZero: true } },
+      ...chartOptions,
+      scales: { 
+          y: { ticks: { precision: 0 }, beginAtZero: true },
+          x: { grid: { display: false } }
+      },
       plugins: { legend: { display: false } }
     }
   });
 }
 
-document.getElementById("refreshBtn").addEventListener("click", loadAnalytics);
-loadAnalytics();
+document.addEventListener('DOMContentLoaded', loadAnalytics);
+document.addEventListener('langChanged', loadAnalytics);
 </script>
 {% endblock %}

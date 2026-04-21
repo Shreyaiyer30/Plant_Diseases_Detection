@@ -13,7 +13,7 @@ from tensorflow.keras.preprocessing import image
 # CONFIGURATION - UPDATE THESE PATHS
 # ============================================================
 
-MODEL_PATH = "models/combined_plant_disease_model"
+MODEL_PATH = "models/combined_plant_models.h5"
 LABELS_PATH = "models/class_labels.json"
 
 # ============================================================
@@ -36,9 +36,39 @@ def load_model_and_labels():
         return None, None
     
     try:
-        # Load model
-        model = tf.keras.models.load_model(MODEL_PATH, compile=False)
-        print(f"Model loaded from {MODEL_PATH}")
+        # Check if it's a container or a single model
+        import h5py
+        with h5py.File(MODEL_PATH, 'r') as f:
+            if 'keras_version' not in f.attrs and len(f.keys()) > 0:
+                print(f"\n📦 {MODEL_PATH} appears to be a Container file.")
+                print("Available models in container:")
+                groups = list(f.keys())
+                for i, g in enumerate(groups, 1):
+                    print(f"  {i}. {g}")
+                
+                choice = input("\nSelect model number to load (or Enter for first): ").strip()
+                selected_group = groups[int(choice)-1] if choice.isdigit() and 0 < int(choice) <= len(groups) else groups[0]
+                
+                print(f"⌛ Extracting '{selected_group}' for testing...")
+                # Extract group to a temporary model file so Keras can load it
+                import tempfile
+                with tempfile.NamedTemporaryFile(suffix='.h5', delete=False) as tmp:
+                    tmp_path = tmp.name
+                
+                with h5py.File(tmp_path, 'w') as f_tmp:
+                    group = f[selected_group]
+                    for key in group.keys():
+                        group.copy(key, f_tmp)
+                    for attr_name, attr_value in group.attrs.items():
+                        f_tmp.attrs[attr_name] = attr_value
+                
+                model = tf.keras.models.load_model(tmp_path, compile=False)
+                os.remove(tmp_path) # Clean up
+                print(f"✅ Loaded sub-model: {selected_group}")
+            else:
+                # Standard single model load
+                model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+                print(f"Model loaded from {MODEL_PATH}")
         
         # Load class labels
         with open(LABELS_PATH, 'r') as f:
@@ -61,11 +91,16 @@ def predict_image(model, class_names, image_path):
         return None, None, f"Image not found: {image_path}", None
     
     try:
-        # Load and preprocess image
-        img = image.load_img(image_path, target_size=(128, 128))
-        img_array = image.img_to_array(img)
+        # Load and preprocess image using OpenCV (Bypasses PIL issue)
+        import cv2
+        img_bgr = cv2.imread(image_path)
+        if img_bgr is None:
+            return None, f"Could not read image: {image_path}", None
+            
+        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+        img_resized = cv2.resize(img_rgb, (128, 128)) # Using 128 for compatibility
+        img_array = img_resized.astype(np.float32) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
-        img_array = img_array / 255.0
         
         # Predict
         predictions = model.predict(img_array, verbose=0)[0]
@@ -79,7 +114,7 @@ def predict_image(model, class_names, image_path):
                 "confidence": float(predictions[idx] * 100)
             })
         
-        return results, None, img
+        return results, None, img_resized
         
     except Exception as e:
         return None, f"Error: {str(e)}", None

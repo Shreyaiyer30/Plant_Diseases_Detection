@@ -169,10 +169,19 @@ class PlantChatbot:
     def _resolve_disease_name(self, disease: str) -> str:
         label = (disease or "Unknown").strip()
         lowered = label.lower()
-        if "healthy" in lowered:
-            return "Healthy"
+        
+        # Prefer specific match if it exists in data
+        if label in self.knowledge_base.data:
+            return label
+            
         if lowered in {"unknown", "uncertain", "invalid"}:
             return "Unknown"
+        
+        # If it's a generic "healthy" check, but no specific key found
+        if "healthy" in lowered and "healthy" not in self.knowledge_base.data.get(label, {}):
+             # Only return generic if no specific key exists
+             if label not in self.knowledge_base.data:
+                 return "Healthy"
         cleaned = label.replace("___", " ").replace("__", " ").replace("_", " ").strip()
         return cleaned or "Unknown"
 
@@ -244,7 +253,7 @@ class PlantChatbot:
             "organic": [r"\borganic\b", r"\bnatural\b", r"\bhome remedy\b", r"\bhome remedies\b", r"\bneem\b", r"\bbuttermilk\b", r"\bcow urine\b", r"\bbio\b"],
             "chemical": [r"\bchemical\b", r"\bfungicide\b", r"\bpesticide\b", r"\bcommercial\b", r"\bbrand\b", r"\bcost\b", r"\bspray\b.*\bname\b", r"\bwhich spray\b"],
             "symptoms": [r"\bsymptoms?\b", r"\blook like\b", r"\bsigns?\b", r"\bcheck for\b", r"\bidentify\b", r"\bspots?\b", r"\byellow\b", r"\bwilt\b", r"\bpata\b"],
-            "care": [r"\bwatering\b", r"\bfertilizer\b", r"\bmanure\b", r"\bsoil\b", r"\bcare\b", r"\bmonsoon\b"],
+            "care": [r"\bwater(ing)?\b", r"\bfertiliz(er|ation|ing)\b", r"\bmanure\b", r"\bsoil\b", r"\bcare\b", r"\bmonsoon\b"],
             "explain": [r"\bwhy\b", r"\bexplain\b", r"\bdetail\b", r"\bkaise\b", r"\bkyun\b"],
             "greeting": [r"\bhi\b", r"\bhello\b", r"\bnamaste\b", r"\bhey\b"],
             "thanks": [r"\bthanks\b", r"\bthank you\b", r"\bshukriya\b"],
@@ -292,7 +301,8 @@ class PlantChatbot:
             "If disease is Healthy or Unknown, give general plant care advice.\n"
             "If the user symptoms do not fit the disease context, ask for a clearer image.\n"
             "For severe cases, suggest contacting a local agricultural officer or KVK.\n"
-            "Prefer Indian conditions, low-cost suggestions, and monsoon-aware prevention.\n\n"
+            "Prefer Indian conditions, low-cost suggestions, and monsoon-aware prevention.\n"
+            "If the user asks about water or fertilization, provide specific, actionable advice (e.g., 'water at soil level' or 'apply balanced NPK') suitable for the detected disease.\n\n"
             f"Detected disease: {disease}\n"
             f"Intent: {intent}\n"
             f"Symptoms: {kb_info.get('symptoms', [])}\n"

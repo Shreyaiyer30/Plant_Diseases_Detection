@@ -458,17 +458,17 @@ def serve_upload(filename):
 @app.route("/detect")
 @login_required
 def detect():
-    return render_template("main_spa.html")
+    return render_template("detect.html")
 
 @app.route("/history")
 @login_required
 def history():
-    return render_template("main_spa.html")
+    return render_template("history.html")
 
 @app.route("/analytics")
 @login_required
 def analytics():
-    return render_template("main_spa.html")
+    return render_template("analytics.html")
 
 # ── API: Predict ──────────────────────────────────────────────────
 @app.route("/api/predict", methods=["POST"])
@@ -487,16 +487,12 @@ def api_predict():
 
     # Get prediction from model
     lang_code = request.form.get('lang', 'en')
-    result = predict_disease(filepath)
+    mode = request.form.get('mode', 'mean') # mean, max, or voting
+    result = predict_disease(filepath, mode=mode)
     
     # Translate specific fields if requested
     if lang_code != 'en':
         result['translated_disease'] = safe_translate(result.get('disease', ''), lang_code)
-        
-        # Translate lists
-        for key in ['symptoms', 'treatment', 'prevention']:
-            if key in result and isinstance(result[key], list):
-                result[key] = [safe_translate(s, lang_code) for s in result[key]]
         
         if result.get('status') == 'uncertain':
             result['message'] = safe_translate(result.get('description', ''), lang_code)
@@ -513,7 +509,7 @@ def api_predict():
             pass
         return jsonify(result), 503
 
-    if result.get("invalid_image"):
+    if result.get("invalid_image") or result.get("status") in ["uncertain", "invalid", "error"]:
         try:
             os.remove(filepath)
         except Exception:
@@ -521,18 +517,24 @@ def api_predict():
         return jsonify({
             "success": False,
             "status": result.get("status", "invalid"),
-            "message": result.get("description", "Please upload a better photo"),
+            "message": result.get("message") or result.get("description") or "Please upload a better photo",
             "issues": result.get("issues", []),
-            "suggestions": result.get("suggestions", [])
+            "suggestions": result.get("suggestions", []),
+            "disease": result.get("disease"),
+            "confidence": result.get("confidence")
         }), 422
 
-    # Normalize healthy labels so the UI and history stay consistent
+    # Normalize healthy labels but preserve specific plant names if stored in KB
     disease_name = result.get("disease", "Unknown")
     status = result.get("status", "unknown")
+    
+    # Try to see if specific info exists before falling back to generic "Healthy"
     display_disease = disease_name
     if "healthy" in str(disease_name).lower():
         status = "healthy"
-        display_disease = "Healthy"
+        # If the KB doesn't have the specific "Blueberry___healthy", then we use "Healthy"
+        if not knowledge_base._find(disease_name):
+            display_disease = "Healthy"
 
     confidence = float(result.get("confidence", 0))
     severity = result.get("severity", "Medium")
@@ -545,6 +547,12 @@ def api_predict():
     # Get dynamic symptoms, treatment, prevention from knowledge base
     disease_info = knowledge_base.get_all_info(display_disease)
     
+    # Translate disease info if needed
+    if lang_code != 'en':
+        for key in ['symptoms', 'treatment', 'prevention', 'organic_remedies', 'chemical_remedies']:
+            if key in disease_info and isinstance(disease_info[key], list):
+                disease_info[key] = [safe_translate(s, lang_code) for s in disease_info[key]]
+
     # Save to database
     pred_doc = {
         "user_id": current_user.id,
@@ -581,6 +589,27 @@ def api_predict():
         "chemical_remedies": disease_info.get("chemical_remedies", [])
     })
 
+# ── API: Train Ensemble ───────────────────────────────────────────
+from model_loader import get_model_instance
+
+@app.route("/api/train", methods=["POST"])
+@login_required
+def api_train():
+    """Trigger retraining of the ensemble components (Admin only)."""
+    if getattr(current_user, 'role', 'user') != 'admin':
+        return jsonify({"error": "Unauthorized. Admin role required."}), 403
+    
+    loader = get_model_instance()
+    # Path to your training dataset
+    data_path = os.path.join(BASE_DIR, 'data', 'PlantVillage')
+    
+    try:
+        # In a real app, this should run in a background thread or queue
+        loader.train_it(data_path)
+        return jsonify({"success": True, "message": "Model ensemble training/fine-tuning initiated."})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 # ── API: AI Chatbot ───────────────────────────────────────────────
 from ai_chatbot import chatbot_reply
 
@@ -606,8 +635,8 @@ def chat():
     eng_input = user_message
     if lang_code != 'en':
         eng_input = safe_translate(user_message, 'en')
-        print(f"Chat Translate: {user_message} -> {eng_input}")
 
+    # Pass everything to the chatbot reply logic
     response_text, source, meta = chatbot_reply(
         eng_input,
         disease,
@@ -619,7 +648,6 @@ def chat():
     final_reply = response_text
     if lang_code != 'en':
         final_reply = safe_translate(response_text, lang_code)
-        print(f"Chat Translate Back: {response_text[:30]}... -> {final_reply[:30]}...")
 
     chat_doc = {
         "user_id": current_user.id,
@@ -780,28 +808,32 @@ def api_analytics():
     preds = list(mongo_db.predictions.find({"user_id": current_user.id}))
     if not preds:
         return jsonify({
-            "total": 0, "healthy": 0, "diseased": 0,
-            "disease_counts": {}, "daily_counts": {}, "avg_confidence": 0
+            "total": 0,
+            "healthy_count": 0,
+            "diseased_count": 0,
+            "disease_distribution": {},
+            "most_common_disease": None,
+            "avg_confidence": 0
         })
-        
-    healthy = sum(1 for p in preds if p.get("status") == "healthy")
+
+    healthy_count = sum(1 for p in preds if p.get("status") == "healthy")
+    diseased_count = len(preds) - healthy_count
     avg_conf = round(sum(p.get("confidence", 0) for p in preds) / len(preds), 1)
-    
-    dc, day = {}, {}
+
+    disease_distribution = {}
     for p in preds:
         disease = p.get("disease", "Unknown")
-        dc[disease] = dc.get(disease, 0) + 1
-        ts = p.get("timestamp")
-        d = ts.strftime("%Y-%m-%d") if ts else "Unknown"
-        day[d] = day.get(d, 0) + 1
-        
+        disease_distribution[disease] = disease_distribution.get(disease, 0) + 1
+
+    most_common = max(disease_distribution, key=disease_distribution.get) if disease_distribution else None
+
     return jsonify({
         "total": len(preds),
-        "healthy": healthy,
-        "diseased": len(preds) - healthy,
+        "healthy_count": healthy_count,
+        "diseased_count": diseased_count,
         "avg_confidence": avg_conf,
-        "disease_counts": dc,
-        "daily_counts": dict(sorted(day.items(), reverse=True))
+        "disease_distribution": disease_distribution,
+        "most_common_disease": most_common
     })
 
 @app.route("/api/health")
