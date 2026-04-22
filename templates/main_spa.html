@@ -120,16 +120,99 @@
     /* Chat Widget */
     .chat-win { position: fixed; right: 24px; bottom: 24px; width: 340px; height: 500px; background: #fff; border-radius: 16px; box-shadow: 0 12px 48px rgba(0,0,0,0.15); display: none; flex-direction: column; z-index: 1000; overflow: hidden; border: 1px solid var(--sand); }
     .chat-win.active { display: flex; }
-    .chat-header { padding: 14px 16px; border-bottom: 1px solid #f3f0ec; display: flex; justify-content: space-between; align-items: center; }
-    .chat-header h4 { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
-    .chat-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; }
+    
+    .chat-header {
+      padding: 16px;
+      border-bottom: 1px solid #f1f1f1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .chat-title {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .chat-dot {
+      width: 8px;
+      height: 8px;
+      background: #22c55e;
+      border-radius: 50%;
+    }
+
+    .title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .subtitle {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .chat-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .new-btn {
+      font-size: 11px;
+      border: 1px solid #e5e5e5;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
     .chat-body { flex: 1; padding: 16px; overflow-y: auto; background: #fdfcfb; display: flex; flex-direction: column; gap: 12px; }
     .msg { padding: 10px 14px; border-radius: 14px; font-size: 13px; max-width: 80%; }
-    .msg-b { background: #f1f5f9; align-self: flex-start; border-bottom-left-radius: 2px; }
-    .msg-u { background: var(--fg); color: #fff; align-self: flex-end; border-bottom-right-radius: 2px; }
+    
+    .msg-b {
+      background: #f3f4f6;
+      border-radius: 12px;
+      padding: 10px 14px;
+      align-self: flex-start;
+      border-bottom-left-radius: 2px;
+    }
+
+    .msg-u {
+      background: #166534;
+      color: white;
+      border-radius: 12px;
+      padding: 10px 14px;
+      align-self: flex-end;
+      border-bottom-right-radius: 2px;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #666;
+      font-size: 13px;
+      margin-top: 40px;
+      line-height: 1.6;
+    }
+
     .chat-pills { padding: 12px; border-top: 1px solid #f3f0ec; display: flex; flex-wrap: wrap; gap: 6px; }
-    .pill { border: 1px solid var(--sand); background: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 6px 12px; border-radius: 6px; cursor: pointer; }
+    
+    .pill {
+      border: 1px solid var(--sand);
+      background: #f9fafb;
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+    }
     .pill:hover { border-color: var(--fg); }
+    
     .chat-foot { padding: 12px; display: flex; gap: 8px; }
     .chat-input { flex: 1; border: 1px solid var(--sand); padding: 10px 14px; border-radius: 8px; font-size: 13px; outline: none; }
     .btn-go { background: var(--fg); color: #fff; border: none; width: 34px; height: 34px; border-radius: 8px; cursor: pointer; }
@@ -409,10 +492,16 @@
 
   <div class="chat-win" id="chat">
     <div class="chat-header">
-      <h4><span class="chat-dot"></span> Plant Assistant</h4>
-      <div style="display: flex; gap: 8px; align-items: center;">
-          <button onclick="newChatAnalysis()" style="background:none; border:1px solid var(--sand); border-radius:4px; font-size:10px; padding:2px 6px; cursor:pointer; color:var(--muted); font-weight:700;">Clear Chat</button>
-          <button onclick="document.getElementById('chat').classList.remove('active')" style="background:none; border:none; font-size:18px; color:var(--muted); cursor:pointer; line-height:1; padding:0 4px;" title="Close">✕</button>
+      <div class="chat-title">
+        <span class="chat-dot"></span>
+        <div>
+          <div class="title">Plant Assistant</div>
+          <div class="subtitle">Your smart companion</div>
+        </div>
+      </div>
+      <div class="chat-actions">
+        <button class="new-btn" onclick="newChatAnalysis()">⟳ New</button>
+        <button class="close-btn" onclick="document.getElementById('chat').classList.remove('active')">✕</button>
       </div>
     </div>
     <div class="chat-body" id="chat-msgs"></div>
@@ -420,10 +509,10 @@
         <input type="hidden" id="ctx-disease" value="">
     </div>
     <div class="chat-pills">
-      <div class="pill" onclick="chatQuick('Prevention')">Prevention</div>
-      <div class="pill" onclick="chatQuick('Organic')">Organic</div>
-      <div class="pill" onclick="chatQuick('Chemicals')">Chemicals</div>
-      <div class="pill" onclick="chatQuick('Symptoms')">Symptoms</div>
+      <div class="pill" onclick="chatQuick('Prevention')">🌿 Prevention</div>
+      <div class="pill" onclick="chatQuick('Organic')">🧪 Organic</div>
+      <div class="pill" onclick="chatQuick('Chemicals')">💊 Chemicals</div>
+      <div class="pill" onclick="chatQuick('Symptoms')">🔍 Symptoms</div>
     </div>
     <div class="chat-foot">
       <input type="text" class="chat-input" id="chat-in" placeholder="Ask a question...">
@@ -568,6 +657,7 @@
       document.getElementById('p-nm').textContent = f.name;
       document.getElementById('drop-zone').style.display = 'none';
       document.getElementById('pre-area').style.display = 'block';
+      resetChatUI();
     });
 
     function resetUp() {
@@ -585,22 +675,46 @@
     // Embedded Camera Logic
     let activeStream = null;
     let useFacing = 'environment';
-    async function startEmbeddedCam() {
+    let allCams = [];
+    let camIdx = 0;
+    let blackFeedInt = null;
+
+    async function startEmbeddedCam(targetIdx = -1) {
+        // Security Check: getUserMedia requires HTTPS or localhost
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+            alert("Security Error: Camera access is only allowed over HTTPS or localhost. If you are accessing from another device, please use a secure (HTTPS) connection.");
+            return;
+        }
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert("Browser Error: Your browser does not support camera access. Please use a modern browser like Chrome or Firefox.");
+            return;
+        }
+
         document.getElementById('drop-zone').style.display = 'none';
         document.getElementById('cam-area').style.display = 'block';
         
         try {
             const devices = await navigator.mediaDevices.enumerateDevices();
-            const cams = devices.filter(d => d.kind === 'videoinput');
+            allCams = devices.filter(d => d.kind === 'videoinput');
+            
+            if (targetIdx !== -1) camIdx = targetIdx;
+            
             let targetId = null;
             
-            for (const c of cams) {
-                const l = c.label.toLowerCase();
-                if (l.includes('ultraviewer') || l.includes('remote') || l.includes('virtual')) {
-                    targetId = c.deviceId;
-                    document.getElementById('v-status').textContent = '📱 REMOTE';
-                    document.getElementById('v-status').style.background = '#16a34a';
-                    break;
+            // Priority 1: Specific camera index if cycling
+            if (targetIdx !== -1 && allCams[camIdx]) {
+                targetId = allCams[camIdx].deviceId;
+            } else {
+                // Priority 2: Virtual/Remote Cameras (for testing)
+                for (const c of allCams) {
+                    const l = c.label.toLowerCase();
+                    if (l.includes('ultraviewer') || l.includes('remote') || l.includes('virtual') || l.includes('obs')) {
+                        targetId = c.deviceId;
+                        document.getElementById('v-status').textContent = '📱 REMOTE';
+                        document.getElementById('v-status').style.background = '#16a34a';
+                        break;
+                    }
                 }
             }
 
@@ -610,31 +724,93 @@
                 height: { ideal: 720 }
             };
 
-            activeStream = await navigator.mediaDevices.getUserMedia(constraints);
-            document.getElementById('v-feed').srcObject = activeStream;
+            try {
+                activeStream = await navigator.mediaDevices.getUserMedia(constraints);
+            } catch (innerErr) {
+                console.warn("Initial camera constraints failed, trying fallback...", innerErr);
+                activeStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            }
+
+            const vid = document.getElementById('v-feed');
+            vid.srcObject = activeStream;
+            
+            vid.onloadedmetadata = () => {
+                vid.play().catch(e => console.error("Auto-play failed", e));
+                startBlackFeedGuard();
+            };
+
         } catch (e) {
-            alert("Camera access failed: " + e.message);
+            console.error("Camera access failed", e);
+            let msg = "Camera access failed: " + e.message;
+            if (e.name === 'NotAllowedError') msg = "Permission denied. Please allow camera access in your browser settings.";
+            if (e.name === 'NotFoundError') msg = "No camera found on this device.";
+            if (e.name === 'NotReadableError') msg = "Camera is already in use by another application.";
+            
+            alert(msg);
             resetUp();
         }
     }
 
+    function startBlackFeedGuard() {
+        if (blackFeedInt) clearInterval(blackFeedInt);
+        let blackFrames = 0;
+        const vid = document.getElementById('v-feed');
+        const can = document.createElement('canvas');
+        can.width = 40; can.height = 30;
+        const ctx = can.getContext('2d');
+
+        blackFeedInt = setInterval(() => {
+            if (!activeStream || vid.paused || vid.ended) return;
+            try {
+                ctx.drawImage(vid, 0, 0, 40, 30);
+                const pix = ctx.getImageData(0,0,40,30).data;
+                let sum = 0;
+                for(let i=0; i<pix.length; i+=4) sum += (pix[i]+pix[i+1]+pix[i+2])/3;
+                const avg = sum / (pix.length/4);
+                
+                if (avg < 5) {
+                    blackFrames++;
+                    if (blackFrames > 10) {
+                        document.getElementById('v-status').textContent = '⚠️ BLACK FEED';
+                        document.getElementById('v-status').style.background = '#d9534a';
+                        if (allCams.length > 1) flipCam();
+                        clearInterval(blackFeedInt);
+                    }
+                } else {
+                    blackFrames = 0;
+                    document.getElementById('v-status').textContent = '● LIVE';
+                    document.getElementById('v-status').style.background = 'rgba(0,0,0,0.5)';
+                }
+            } catch(e) {}
+        }, 500);
+    }
+
     function stopEmbeddedCam() {
+        if (blackFeedInt) clearInterval(blackFeedInt);
         if (activeStream) {
             activeStream.getTracks().forEach(t => t.stop());
             activeStream = null;
         }
-        document.getElementById('v-status').textContent = '● LIVE';
-        document.getElementById('v-status').style.background = 'rgba(0,0,0,0.5)';
     }
 
     async function flipCam() {
-        useFacing = useFacing === 'user' ? 'environment' : 'user';
-        stopEmbeddedCam();
-        await startEmbeddedCam();
+        if (allCams.length > 1) {
+            camIdx = (camIdx + 1) % allCams.length;
+            stopEmbeddedCam();
+            await startEmbeddedCam(camIdx);
+        } else {
+            useFacing = useFacing === 'user' ? 'environment' : 'user';
+            stopEmbeddedCam();
+            await startEmbeddedCam();
+        }
     }
 
     function snapPhoto() {
         const vid = document.getElementById('v-feed');
+        if (!vid || vid.videoWidth === 0) {
+            alert("Camera not ready. Please wait for the video feed.");
+            return;
+        }
         const can = document.getElementById('cam-canvas');
         can.width = vid.videoWidth; can.height = vid.videoHeight;
         can.getContext('2d').drawImage(vid, 0, 0);
@@ -645,6 +821,7 @@
             document.getElementById('cam-area').style.display = 'none';
             document.getElementById('pre-area').style.display = 'block';
             stopEmbeddedCam();
+            resetChatUI();
         }, 'image/jpeg', 0.9);
     }
 
@@ -680,6 +857,7 @@
         alert("Analysis failed: " + e.message); 
       } finally { 
         document.getElementById('loader').style.display = 'none'; 
+        resetChatUI();
       }
     }
 
@@ -856,9 +1034,19 @@
         chatSend();
     }
 
+    function resetChatUI() {
+        const container = document.getElementById('chat-msgs');
+        container.innerHTML = `
+            <div class="empty-state">
+                🌿 Ready to help your plants thrive!
+                <br/><small>Upload a plant or ask a question</small>
+            </div>
+        `;
+    }
+
     async function newChatAnalysis() {
-        // Clear UI
-        document.getElementById('chat-msgs').innerHTML = '';
+        resetChatUI();
+        // Clear Context
         document.getElementById('ctx-disease').value = '';
         const ctx = document.getElementById('ctx-disease');
         delete ctx.dataset.status;
@@ -870,16 +1058,13 @@
         // Clear Server Session
         try {
             await fetch('/api/chat/clear', { 
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                method: 'POST'
             });
         } catch (e) { console.error("Failed to clear server chat history", e); }
         
         if (document.getElementById('v-detect').classList.contains('active')) {
             resetUp();
         }
-        
-        addMsg('Chat history refreshed. Session is now clean.', 'b');
     }
   </script>
 </body>

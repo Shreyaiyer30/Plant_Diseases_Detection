@@ -24,6 +24,12 @@ try:
 except ImportError:
     MongoClient = None
 
+try:
+    from chatbot import Chat
+    CHATBOT_LIBRARY_AVAILABLE = True
+except ImportError:
+    CHATBOT_LIBRARY_AVAILABLE = False
+
 
 class TTLCache:
     def __init__(self, ttl_seconds: int = 3600, max_items: int = 512):
@@ -31,6 +37,7 @@ class TTLCache:
         self.max_items = max_items
         self._cache: Dict[Any, Tuple[float, Any]] = {}
         self._lock = threading.Lock()
+        # ❌ REMOVED the incorrect line: self.groq_model_name = groq_model_name or "llama-3.3-70b-versatile"
 
     def get(self, key: Any) -> Any:
         with self._lock:
@@ -58,7 +65,7 @@ class PlantChatbot:
         self,
         knowledge_file: Optional[str] = None,
         groq_api_key: Optional[str] = None,
-        groq_model_name: str = "llama3-70b-8192",
+        groq_model_name: str = "llama-3.3-70b-versatile",  # ✅ CHANGED from "llama3-70b-8192"
         temperature: float = 0.7,
         max_output_tokens: int = 300,
         cache_ttl_seconds: int = 3600,
@@ -66,7 +73,7 @@ class PlantChatbot:
     ):
         self.knowledge_base = DiseaseKnowledgeBase(knowledge_file)
         self.groq_api_key = groq_api_key or os.getenv("GROQ_API_KEY")
-        self.groq_model_name = groq_model_name
+        self.groq_model_name = groq_model_name  # ✅ This will now use the updated model
         self.temperature = temperature
         self.max_output_tokens = max_output_tokens
         self.cache = TTLCache(ttl_seconds=cache_ttl_seconds)
@@ -76,6 +83,26 @@ class PlantChatbot:
         self._lock = threading.Lock()
         self.mongo_collection = self._init_mongo_collection()
         self.groq_client = self._init_groq_client()
+        self.engine = self._init_chatbot_engine()
+
+    def _init_chatbot_engine(self):
+        if not CHATBOT_LIBRARY_AVAILABLE:
+            print("[Chatbot] ChatBotAI library not found. Falling back to legacy regex matching.")
+            return None
+        
+        template_path = os.path.join(os.path.dirname(__file__), "models", "chat_templates", "plant_care.template")
+        if not os.path.exists(template_path):
+            print(f"[Chatbot] Template file not found at {template_path}")
+            return None
+            
+        try:
+            # Initialize with the template
+            engine = Chat(template_path)
+            print(f"[Chatbot] ChatBotAI engine initialized with template: {os.path.basename(template_path)}")
+            return engine
+        except Exception as exc:
+            print(f"[Chatbot] ChatBotAI initialization failed: {exc}")
+            return None
 
     def _init_groq_client(self):
         if not GROQ_AVAILABLE:
@@ -145,13 +172,39 @@ class PlantChatbot:
 
         response_text = None
         source = "local_kb"
-        if self._should_use_groq(intent):
+
+        # 1. Try ChatBotAI Engine (Template Matching with Context)
+        if self.engine:
+            try:
+                # Sync context attributes to the engine
+                self.engine.attr(
+                    disease=resolved_disease,
+                    symptoms=", ".join(kb_info.get("symptoms", [])[:3]) or "No specific symptoms listed",
+                    treatment=", ".join(kb_info.get("treatment", [])[:2]) or "Contact agricultural officer",
+                    organic=", ".join(kb_info.get("organic_remedies", [])[:2]) or "Neem oil and bio-pesticides",
+                    chemical=", ".join(kb_info.get("chemical_remedies", [])[:2]) or "Consult local KVK for fungicides",
+                    prevention=", ".join(kb_info.get("prevention", [])[:2]) or "Field sanitation and crop rotation",
+                    watering=", ".join(self.knowledge_base.data.get("PlantCare", {}).get("watering", [])[:2]) or "Water at soil level"
+                )
+                
+                engine_response = self.engine.respond(user_message)
+                # If the engine found a specialized match (not the catch-all)
+                if engine_response and not engine_response.startswith("I'm not exactly sure"):
+                    response_text = engine_response
+                    source = "chatbot_engine"
+            except Exception as e:
+                print(f"[Chatbot] Engine response failed: {e}")
+
+        # 2. Try Groq (AI Fallback for complex queries)
+        if not response_text and self._should_use_groq(intent):
             response_text = self._get_groq_response(user_message, resolved_disease, kb_info, session_id, intent)
             if response_text:
                 source = "groq"
 
+        # 3. Last Resort: Local KB fallback
         if not response_text:
             response_text = self._get_local_response(user_message, resolved_disease, kb_info, intent)
+            source = "local_kb"
 
         response_text = self._format_response(response_text, resolved_disease, intent)
         self._append_history(session_id, user_message, response_text, resolved_disease)
@@ -327,7 +380,7 @@ class PlantChatbot:
                     {"role": "system", "content": "You are a concise AI plant health assistant."},
                     {"role": "user", "content": prompt}
                 ],
-                model=self.groq_model_name,
+                model=self.groq_model_name,  # ✅ Now using the updated model name
                 temperature=self.temperature,
                 max_completion_tokens=self.max_output_tokens,
             )
@@ -348,7 +401,7 @@ class PlantChatbot:
         if intent == "greeting":
             return "🌿 Namaste. Ask me about symptoms, treatment, prevention, organic remedies, or sprays for your plant."
         if intent == "thanks":
-            return "🌱 You’re welcome. Ask if you want the next step for this plant."
+            return "🌱 You're welcome. Ask if you want the next step for this plant."
         if disease_key == "healthy":
             return self._healthy_response(intent)
         if disease_key == "unknown":
